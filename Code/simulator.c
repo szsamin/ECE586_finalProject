@@ -1,36 +1,17 @@
+/* Simulator C file 
+   Author: Apurva Gandole, Chandan Muralidhar, Shadmna Samin, Sourabh Balakrishna
+  
+   Description: 
+
+*/ 
+
 // Library Declarations 
 #include <stdlib.h> 
 #include <stdio.h> 
 #include <string.h> 
+#include <unistd.h> 
+#include "../Code/simulator.h" 
 
-
-// DEFINES
-#define byte_length 4 
-#define KB 1024
-#define MB (KB*KB) 
-#define MEM (64*KB) 
-
-#define DATA_READ 0 
-#define DATA_WRITE 1 
-#define INSTRUCTION_FETCH 2 
-
-/* Registers */ 
-#define R0 0
-#define	R1 1
-#define	R2 2
-#define R3 3
-#define R4 4 
-#define R5 5
-#define SP 6	
-#define PC 7
- 
-/* Flags  */
-#define C 0
-#define V 1
-#define Z 2
-#define N 3
-#define T 4
-#define I 5
 
 // Global data type initializations
 char dataStr[MEM];  				
@@ -38,13 +19,7 @@ unsigned char mem[MEM]; 		// Memory size declaration
 unsigned short int Reg [8]; 		// Register size declaration 
 unsigned short int PSW; 		// 
 
-// Function prototypes
-int open_file(char *arr);
-void display();  
-void write_mem(unsigned short type, unsigned short address, unsigned short data);
-unsigned short read_mem(unsigned short type, unsigned short address);
-
-int main(){
+int main(int argc,int argv){
           /* initial step read file */ 
 	  char *Source = "../TestFiles/source.ascii";   
 	  open_file(Source); 
@@ -52,34 +27,48 @@ int main(){
 	  int done = 0;
 
 	  /* Initial Starting address */ 
-          Reg[PC] = 0;
+          Reg[PC] = (argc == 2) ? argv : 0; 
 	  /* Add a command line if else - if the user does not specify a starting address, the starting address defaults to 0 */ 
-
-
+	  
 	  unsigned short fetched_instruction; 
-          long int instruction_counter = 0; 		
-	
+          long int instruction_counter = 0; 
+
+	  /* Trace file generatin Initialization */ 
+	  FILE * trace = fopen("tracefile.txt","w"); 
+	  if(trace == NULL){
+		printf("Error opening trace file!\n"); 
+	        exit(1); 
+	  } 
+
+ 	  
+	  done = 1; // Ignores the Fetch > Decode > Execute for now 
 	  while(!done){ 
-	  	/* Fetch Instruction */ 
-	  	fetched_instruction = read_mem(INSTRUCTION_FETCH,Reg[PC]); 
+	   	// Fetch Instruction  
+	  	fetched_instruction = read_mem(trace,INSTRUCTION_FETCH,Reg[PC]); 
 	  	
-		/* Decode Instruction */ 
+		// Decode Instruction  
 		
 
 
-		/* Execute Instruction */
+		// Execute Instruction 
 		instruction_counter++; 
 	 
 	
-		/* Increment */ 
+		// Increment 
 		
 	 }
+	  	
+	
+
+	  
 
 	  /* Throw data into mem */ 
 			
 	  /* Display function */ 
 	  display(); 
 
+	  /* Trace file end */ 
+	  fclose(trace); 
 	  return(0); 
 }
 
@@ -104,7 +93,7 @@ void display(){
 
 /* Read Memory Function */
 /* Return value from read_mem - either instruction or memory content will be 16 bit return value */  
-unsigned short read_mem(unsigned short type, unsigned short address){
+unsigned short read_mem(FILE *trace,unsigned short type, unsigned short address){
 		
 		unsigned short mem_value; 
 
@@ -115,28 +104,31 @@ unsigned short read_mem(unsigned short type, unsigned short address){
 		}
 
 		/* Read mem */ 
-		if(type == READ_MEM){
-			mem_value = mem[address]; 
-			// Print out the trace file <type> <address> 
+		if(type == DATA_READ){
+			mem_value = mem[address];
+
 		} 
 		/* Read instruction set */ 
 		else if(type == INSTRUCTION_FETCH){
 			mem_value = mem[address];
-			// Print out the trace file with <type> <address>  
+		  
 		} 
+		/* Trace file generation */
+		fprintf(trace,"%d %o\n",type,address); 
 		return mem_value; 
 }
 
 
 /* Write to Memory function */ 
-void write_mem(unsigned short type, unsigned short address, unsigned short data){
+void write_mem(FILE *trace,unsigned short type, unsigned short address, unsigned short data){
 		if((address & 0x0001)){
 			printf("Unalligned memory address - Write memory request error! Address = %o", address);
 			exit(1); 
-		{		
+		}		
 		
 		mem[address] = data;
-		// Print out the trace file <type> <address> 
+		/* Trace file generation */ 
+		fprintf(trace,"%d %o\n",type,address); 
 		return; 						
 }
 
@@ -149,7 +141,7 @@ int open_file(char *arr){
         int scan_file;
 	unsigned int octal_value;
         unsigned short int mem_pointer = 0;
-	
+        Reg[PC] = 0; 	
 	
 	/* Check if the file exits */ 
 	if(fp == NULL){
@@ -172,7 +164,7 @@ int open_file(char *arr){
 	 		mem_pointer = octal_value;	// Ask Faust how memory allocation happens here 
 		}
 		else if(character == "*"){
-			Reg[PC} = octal_value;
+			Reg[PC] = octal_value;
 		}
 		else{ 
 	   		mem[mem_pointer] = octal_value & 0x00FF; 
@@ -185,16 +177,16 @@ int open_file(char *arr){
 	return(0); 
 }
 	
-	/* Working - DO NOT REMOVE 
-	while(1){ 
-		c = fgetc(fp); 
-		if(feof(fp)){
-			break; 
-		}
-		printf("%c",c); 
-	}
 
-*/  
+
+
+
+
+
+
+
+
+ 
 
 
 

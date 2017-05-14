@@ -9,8 +9,7 @@ obj2ascii:
 all:	compile run 
 
 compile: 
-	gcc simulator.c 
-
+	gcc simulator.c simulator.h
 run:
 	./a.out
 
