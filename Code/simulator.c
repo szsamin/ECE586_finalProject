@@ -80,10 +80,10 @@ void display(){
 		exit(1); 
 	}
 	    	 
-	/* Print everything in the memory */ 
+	/* Print everything in the memory */ /* The correct format specifier to print address is %p followed by type (void *) */ 
 	for(int i = 0; i < sizeof(mem); i++){
 	    fprintf(f,"-----------------------------------------\n"); 
-	    fprintf(f,"|   Content - %0o  |     Address - %0x	| \n",mem[i],&mem[i]);
+	    fprintf(f,"|   Content - %o  |     Address - %p	| \n",(unsigned char)mem[i],(void *)&mem[i]);
 	    fprintf(f,"-----------------------------------------\n"); 
 	}
 	
@@ -137,7 +137,7 @@ void write_mem(FILE *trace,unsigned short type, unsigned short address, unsigned
 int open_file(char *arr){ 
 	/* Opens the filename pointed to - 'r' opens a file for reading */ 
  	FILE * fp = fopen(arr,"r"); 
-	char *character;
+	char character;
         int scan_file;
 	unsigned int octal_value;
         unsigned short int mem_pointer = 0;
@@ -159,11 +159,12 @@ int open_file(char *arr){
 		}
 			
 		/* populate the memory */ 
-		if(character == "@"){
+		/* "@" gives a warning - should '@'. In C single quoutes delimits a single character whereas double qoutes are for strings */ 
+		if(character == '@'){
 			/* Indicates a change in memory pointer address - Due to branching */ 
 	 		mem_pointer = octal_value;	// Ask Faust how memory allocation happens here 
 		}
-		else if(character == "*"){
+		else if(character == '*'){
 			Reg[PC] = octal_value;
 		}
 		else{ 

@@ -34,6 +34,35 @@
 #define T 4
 #define I 5
 
+/* Mnemonic Opcode */
+
+/// -------------DOUBLE OPERAND-------------------- 
+#define MOV 1		// Move: dest = src
+#define MOVB 11		
+#define CMP		// Compare : compute src - dest, set flags only
+#define CMPB 12 	
+#define BIT 3
+#define BITB 13		// Bit test: compute dest & src, set flags only
+#define BIC 3
+#define BICB 14		//Bit clear: dest &= ~src 
+#define BIS 5
+#define BISB 15		// Bit set, a.k.a logic OR: dest |= src 
+#define ADD 6		// ADD, dest += src 
+#define SUB 16 		// Substract, dest -=  src 
+///-------------------------------------------------
+
+///--------------------------------------------------
+#define MUL 70		// Multiply: (R,R+1) = R*SRC 
+#define DIV 71		// Divide: Compute (R,R+1) / SRC, quotient in R, remainder R+1
+#define ASH 72		// Arithmetic shift: R <<= src, shift amount maybe be -32...31
+#define ASHC 73 	// Arithmetic shift combined: (R,R+1) <<= src, shift amount may be -32... 31
+#define XOR 74 		// Exclusive OR: dest ^= reg (word only) 
+#define SOB 77		// Subtract and branch: decrement register, if result non-zero, branch backward 0...63 words
+//---------------------------------------------------
+
+
+
+
 /* Structures - For Decode */
 /* struct [structure tag] {
 	member definition;
