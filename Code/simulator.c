@@ -20,7 +20,7 @@ unsigned short int Reg [8]; 		// Register size declaration
 unsigned short int PSW; 		// 
 
 int main(int argc,int argv){
-          /* initial step read file */ 
+	  /* initial step read file */ 
 	  char *Source = "../TestFiles/source.ascii";   
 	  open_file(Source); 
 	  
@@ -30,7 +30,7 @@ int main(int argc,int argv){
           Reg[PC] = (argc == 2) ? argv : 0; 
 	  /* Add a command line if else - if the user does not specify a starting address, the starting address defaults to 0 */ 
 	  
-	  unsigned short fetched_instruction; 
+	  instruction_set  fetched_instruction; 
           long int instruction_counter = 0; 
 
 	  /* Trace file generatin Initialization */ 
@@ -40,14 +40,29 @@ int main(int argc,int argv){
 	        exit(1); 
 	  } 
 
- 	  
+           	  
 	  done = 1; // Ignores the Fetch > Decode > Execute for now 
 	  while(!done){ 
 	   	// Fetch Instruction  
-	  	fetched_instruction = read_mem(trace,INSTRUCTION_FETCH,Reg[PC]); 
+	  	fetched_instruction = (union instruction_set)read_mem(trace,INSTRUCTION_FETCH,Reg[PC]); 
 	  	
-		// Decode Instruction  
+		// Decode Instruction  		
+               /* Pseudo code */
+		/* 
 		
+		IF fetched_instruction.ZOP is either HALT | WAIT | RESET |NOP
+		ELSE IF fetched_instruction.OOP is between 0050 and 0067
+		
+		ELSE IF fetched_instruction.OHOP is between 070 and 074
+
+		ELSE IF fetched_instruction.TOP is --- 
+
+		ELSE IF 
+
+		*/
+				
+
+
 
 
 		// Execute Instruction 

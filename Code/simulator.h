@@ -5,6 +5,7 @@
 
 */ 
 #include <stdio.h>
+#include <string.h>
 
 // DEFINES
 #define byte_length 4 
@@ -35,6 +36,9 @@
 #define I 5
 
 /* Mnemonic Opcode */
+/// ------------ ZERO OPERAND OPCODE --------------
+#define HALT 0000000
+#define NOP  0000240
 
 /// -------------DOUBLE OPERAND-------------------- 
 #define MOV 1		// Move: dest = src
@@ -71,6 +75,39 @@
 } [one or more structure variables] 
 */
 
+/// Zero Operand Instructions // 
+typedef struct zero_operand{
+	unsigned short opcode; 
+} zero_operand; 
+ 
+// One Operand Instructions // 
+typedef struct one_operand{ 
+	unsigned short opcode:10;
+	unsigned short addr:6;
+} one_operand; 
+
+
+// one-and-half-operand instructions // 
+typedef struct one_half_operand{
+	unsigned short opcode:7;
+	unsigned short reg:3;
+	unsigned short addr:6; 
+}one_half_operand; 
+
+// two-operand instructions // 
+typedef struct two_operand{
+	unsigned short opcode:4;
+	unsigned short src:6;
+	unsigned short dst:6;
+}two_operand; 
+
+// branch instruction // 
+typedef struct branch{
+	unsigned short opcode:8;
+	unsigned short offset:8;
+}branch; 
+
+/*
 //// Double-operand instructions /// 
 struct double_operand{
 	unsigned short B:1; 
@@ -95,6 +132,8 @@ struct conditional{
 	unsigned short Offset:8;
 }conditional; 
 
+*/ 
+
 /* Unions */ 
 /* union [union tag]{
 	member definition;
@@ -102,10 +141,13 @@ struct conditional{
 	member definition;
 }[one or more union variables]; 
 */ 
-union instruction_set{
-	struct double_operand DOP; 
-	struct single_operand SOP;
-	struct conditional COND; 
+typedef union instruction_set{
+	unsigned short fetched;
+	struct zero_operand ZOP; 
+	struct one_operand OOP;
+	struct one_half_operand OHOP;
+	struct two_operand TOP;
+	struct branch BRANCH;  
 } instruction_set;
 
 // Function prototypes
