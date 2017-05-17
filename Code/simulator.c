@@ -27,7 +27,7 @@ int main(int argc,int argv){
 	  int done = 0;
 
 	  /* Initial Starting address */ 
-          Reg[PC] = (argc == 2) ? argv : 0; 
+          Reg[PC] = 2; 
 	  /* Add a command line if else - if the user does not specify a starting address, the starting address defaults to 0 */ 
 	  
 	  instruction_set  fetched_instruction; 
@@ -40,12 +40,12 @@ int main(int argc,int argv){
 	        exit(1); 
 	  } 
 
-           	  
-	  done = 1; // Ignores the Fetch > Decode > Execute for now 
-	  while(!done){ 
+	  done = 0; // Ignores the Fetch > Decode > Execute for now 
+	  while(!done){
+		 
 	   	// Fetch Instruction  
 	  	fetched_instruction = (union instruction_set)read_mem(trace,INSTRUCTION_FETCH,Reg[PC]); 
-	  	
+	  	printf("Instruction Fetched !\n");
 		// Decode Instruction  		
                /* Pseudo code */
 		/* 
@@ -60,17 +60,85 @@ int main(int argc,int argv){
 		ELSE IF 
 
 		*/
+		if(fetched_instruction.fetched == HALT){
+			done = 1; 
+			printf("Done is set to 1\n"); 
+		} 
+		else if(fetched_instruction.fetched == NOP){
+
+		}
+		else{
+			switch((fetched_instruction.fetched & 0xF000)>> 12){
+				/* If bits 15 thru 12 is true for the following case - We have the given scenerios of possible ISA inside the case statements */
+				/* Matches with - One_half and SOB */
+				case 07:
+					/* We will look at bits 11 thru 9 to distinguish between one half operand and SOB */ 
+					if(((fetched_instruction.fetched & 0x0E00) >> 9)== 07){
+						printf("SOB Instruction\n");
+					}
+					else{
+						printf("One Half Operand Instruction\n"); 
+
+					}
+					break; 
 				
+				/* Matches with - One operand and JSR and SWAB and RTS and PSW and Branch and other instructions */ 
+				case 00:
+					/* We will look at the 11th bit to determine between (JSR, One Op) or the rest */ 
+					if((fetched_instruction.fetched & 0x0800) >> 11){
+						
+						/* If Bits 11 thru 9 follows the patter 0100 - True it is JSR, false it is a one operand */ 
+						if(((fetched_instruction.fetched & 0x0E00)>> 9) == 04){			
+							printf("JSR Instruction\n"); 
+						}
+						else{
+							printf("One operand Instruction\n"); 
 
+						}		
+					}
+					else{
+						/* If bit 11 thru 6 is true it is SWAB operation or else it is (Other Instructions, Branch, RTS, PSW)  */
+						if(((fetched_instruction.fetched & 0x0FC0) >> 6) == 03){
+							printf("SWAB Operation\n"); 	
 
+						}
+						/* Else if bits 11 thru 8 is zero it is not zero it is a branch instruction otherwise (RTS | PSW) */
+						else if(((fetched_instruction.fetched & 0x0F00) >> 8) != 0){
+							printf("Branch Instruction\n"); 
+							}
+						else{
+							if(((fetched_instruction.fetched & 0x0080) >> 7) == 01){
+								if(((fetched_instruction.fetched & 0x00F8) >> 3) == 010){
+									printf("RTS Instruction\n"); 
+								}
+								else{
+									printf("PSW Instruction\n"); 
+								}
+							}
+							else{
+								printf("Other Instruction\n"); 
+							}
+						}
+						
+					}					
+					break;  
 
-
+				/* Matches with - Branch instructions */ 
+				case 010:
+					printf("Branch Instruction\n"); 
+					break; 
+				/* If none of the above sets are a match it is a two_operand instructions */ 
+				default:
+					printf("Two Operand Instruction\n"); 
+			}
+			
+		}
 		// Execute Instruction 
-		instruction_counter++; 
+		 
 	 
 	
 		// Increment 
-		
+	        Reg[PC] = Reg[PC] + 2; 	
 	 }
 	  	
 	
@@ -98,7 +166,7 @@ void display(){
 	/* Print everything in the memory */ /* The correct format specifier to print address is %p followed by type (void *) */ 
 	for(int i = 0; i < sizeof(mem); i++){
 	    fprintf(f,"-----------------------------------------\n"); 
-	    fprintf(f,"|   Content - %o  |     Address - %p	| \n",(unsigned char)mem[i],(void *)&mem[i]);
+	    fprintf(f,"|   Content - %o  |     Address - %p	| \n",(unsigned char)mem[i],i);
 	    fprintf(f,"-----------------------------------------\n"); 
 	}
 	
@@ -120,13 +188,12 @@ unsigned short read_mem(FILE *trace,unsigned short type, unsigned short address)
 
 		/* Read mem */ 
 		if(type == DATA_READ){
-			mem_value = mem[address];
+			mem_value = (mem[address+1] << 8) | mem[address];
 
 		} 
 		/* Read instruction set */ 
 		else if(type == INSTRUCTION_FETCH){
-			mem_value = mem[address];
-		  
+			mem_value = (mem[address+1] << 8) | mem[address];	  
 		} 
 		/* Trace file generation */
 		fprintf(trace,"%d %o\n",type,address); 
@@ -141,7 +208,8 @@ void write_mem(FILE *trace,unsigned short type, unsigned short address, unsigned
 			exit(1); 
 		}		
 		
-		mem[address] = data;
+		mem[address] = data & 0000377; 
+		mem[address+1] = (data & 0177400) >> 8; 
 		/* Trace file generation */ 
 		fprintf(trace,"%d %o\n",type,address); 
 		return; 						
@@ -167,7 +235,7 @@ int open_file(char *arr){
 	
 	while(1){ 	
 		fscanf( fp,"%c%o\n",&character,&octal_value); 
-		printf("Begin - %c, Octal - %o\n ", character,octal_value);   		
+		//printf("Begin - %c, Octal - %o\n ", character,octal_value);   		
 
 		if(feof(fp)){
 			break; 
@@ -183,10 +251,14 @@ int open_file(char *arr){
 			Reg[PC] = octal_value;
 		}
 		else{ 
-	   		mem[mem_pointer] = octal_value & 0x00FF; 
-	      		mem[mem_pointer+1] = (octal_value & 0xFF00) >> 8; 
+	   		mem[mem_pointer] = octal_value & 0000377;
+			printf("Mem Value - %o, Mem Index - %d\n",mem[mem_pointer], mem_pointer);
+			mem[mem_pointer+1] = (octal_value & 0177400) >> 8; 
+			printf("Mem Value - %o, Mem Index - %d\n",mem[mem_pointer+1], mem_pointer+1); 
+			printf("Final Value - %o\n", (mem[mem_pointer+1] << 8) | (mem[mem_pointer]));  
+			mem_pointer = mem_pointer + 2; 
 		}
-		mem_pointer = mem_pointer + 2;
+	
  
 	}
 	fclose(fp); 
