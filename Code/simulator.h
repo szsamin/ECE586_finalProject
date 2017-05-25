@@ -41,16 +41,11 @@
 #define NOP  0000240
 
 /// -------------DOUBLE OPERAND-------------------- 
-#define MOV 1		// Move: dest = src
-#define MOVB 11		
-#define CMP		// Compare : compute src - dest, set flags only
-#define CMPB 12 	
-#define BIT 3
-#define BITB 13		// Bit test: compute dest & src, set flags only
-#define BIC 3
-#define BICB 14		//Bit clear: dest &= ~src 
-#define BIS 5
-#define BISB 15		// Bit set, a.k.a logic OR: dest |= src 
+#define MOV 1		// Move: dest = src	
+#define CMP 2		// Compare : compute src - dest, set flags only	
+#define BIT 3 		// Bit test: compute dest & src, set flags only
+#define BIC 4		//Bit clear: dest &= ~src 
+#define BIS 5		// Bit set, a.k.a logic OR: dest |= src 
 #define ADD 6		// ADD, dest += src 
 #define SUB 16 		// Substract, dest -=  src 
 ///-------------------------------------------------

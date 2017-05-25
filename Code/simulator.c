@@ -257,6 +257,33 @@ unsigned short Effective_Address(FILE *trace, unsigned short mode, unsigned shor
 	}
 }
 
+/* Double Operand Instruction Function */ 
+void func_doubleoperand(FILE *trace, instruction_set input_var){
+	unsigned short temp; 
+	switch(input_var.TOP.Opcode){
+		case MOV:
+ 			  break; 
+		case CMP: break;
+		case BIT: break;
+		case BIC: break;
+		case BIS: break;
+		case ADD: break;
+		case SUB: break; 
+	}
+}
+
+/* One Half Intruction Function - Some additional two-operand require source operand */ 
+void func_onehalfoperand(FILE *trace, instruction_set input_var){
+	switch(input_var.OHOP.Opcode){
+		case MUL: break;
+		case DIV: break;	 
+		case ASH: break;
+		case ASHC: break;
+		case XOR: break;
+		case SOB: break;  		
+	}
+}
+
 
 
 int open_file(char *arr){ 
