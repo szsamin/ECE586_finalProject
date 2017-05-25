@@ -64,7 +64,14 @@
 #define SOB 77		// Subtract and branch: decrement register, if result non-zero, branch backward 0...63 words
 //---------------------------------------------------
 
-
+// Effective address calculation define //
+#define R_DEF   1
+#define AUTOINCR     2
+#define AUTOINC_DEF  3
+#define AUTODECR     4
+#define AUTODECR_DEF 5
+#define INDEX	     6
+#define INDEX_DEF    7
 
 
 /* Structures - For Decode */
@@ -75,6 +82,7 @@
 } [one or more structure variables] 
 */
 
+/*
 /// Zero Operand Instructions // 
 typedef struct zero_operand{
 	unsigned short opcode; 
@@ -94,6 +102,8 @@ typedef struct one_half_operand{
 	unsigned short addr:6; 
 }one_half_operand; 
 
+
+
 // two-operand instructions // 
 typedef struct two_operand{
 	unsigned short opcode:4;
@@ -101,13 +111,16 @@ typedef struct two_operand{
 	unsigned short dst:6;
 }two_operand; 
 
+
+
 // branch instruction // 
 typedef struct branch{
 	unsigned short opcode:8;
 	unsigned short offset:8;
 }branch; 
 
-/*
+*/
+
 //// Double-operand instructions /// 
 struct double_operand{
 	unsigned short B:1; 
@@ -126,13 +139,22 @@ struct single_operand{
 	unsigned short Register:3;
 }single_operand;
 
+struct onehalf_operand{
+	unsigned short Remainder:4;
+	unsigned short Opcode:3;
+	unsigned short Register:3;
+	unsigned short Mode:3;
+	unsigned short Source:3;
+} onehalf_operand; 
+
 struct conditional{
 	unsigned short x:1;
+	unsigned short Remainder:4; 
 	unsigned short Opcode:3;
 	unsigned short Offset:8;
 }conditional; 
 
-*/ 
+ 
 
 /* Unions */ 
 /* union [union tag]{
@@ -142,12 +164,11 @@ struct conditional{
 }[one or more union variables]; 
 */ 
 typedef union instruction_set{
-	unsigned short fetched;
-	struct zero_operand ZOP; 
-	struct one_operand OOP;
-	struct one_half_operand OHOP;
-	struct two_operand TOP;
-	struct branch BRANCH;  
+	unsigned short fetched; 
+	struct single_operand OOP;
+	struct onehalf_operand OHOP;
+	struct double_operand TOP;
+	struct conditional BRANCH;  
 } instruction_set;
 
 // Function prototypes
@@ -155,10 +176,16 @@ int open_file(char *arr);
 void display();  
 void write_mem(FILE*,unsigned short type, unsigned short address, unsigned short data);
 unsigned short read_mem(FILE*, unsigned short type, unsigned short address);
+unsigned short Effective_address(FILE*, unsigned short mode, unsigned short source); 
 
-
-
-
+/* Operand Function Prototypes */ 
+void func_doubleoperand(FILE *,instruction_set input_var); 
+void func_singleoperand(FILE *,instruction_set input_var);
+void func_onehalfoperand(FILE *,instruction_set input_var);  
+void func_conditionalbranch(FILE *,instruction_set input_var); 
+void jump(FILE *,instruction_set input_var); 
+void psw(FILE *,instruction_set input_var); 
+void func_otherinstruction(FILE *,instruction_set input_var); 
 
 
 
