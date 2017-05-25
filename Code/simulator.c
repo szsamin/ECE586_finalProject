@@ -215,6 +215,47 @@ void write_mem(FILE *trace,unsigned short type, unsigned short address, unsigned
 		return; 						
 }
 
+unsigned short Effective_Address(unsigned short mode, unsigned short source) {
+	unsigned short x;
+	switch(mode) {
+		
+		case Register_Deferred      : return Reg[source];
+								      break;
+								 
+		case Autoincrement          : return Reg[source];
+								      Reg[source] = Reg[source]+2;
+								      break;
+								 
+		case Autoincrement_Deferred : return read_mem( ,DATA_READ,Reg[source]);
+									  Reg[source] = Reg[source]+2;
+									  break;
+									  
+		case Autodecrement      	: Reg[source] = Reg[source] - 2;
+									  return Reg[source];
+									  break;
+									
+		case Autodecrement_Deferred : Reg[source] = Reg[source] - 2;
+									  return read_mem( ,DATA_READ,Reg[source]);
+									  break;
+									  
+		case Index                  : x = read_mem( ,DATA_READ,Reg[PC]);
+		                              Reg[source] = Reg[source] + x;
+									  Reg[PC] = Reg[PC] + 2;
+									  return Reg[source];
+									  break
+									  
+		case Index_Deferred         : x = read_mem( ,DATA_READ,Reg[PC]);
+		                              Reg[source] = Reg[source] + x;
+									  Reg[PC] = Reg[PC] + 2;
+									  return read_mem( ,DATA_READ, Reg[source]);
+									  break;
+									  
+		default                     : printf("Following mode doesn't require Effective Address calculation\n");
+		                              break;
+									  
+	}
+}
+
 
 
 int open_file(char *arr){ 
