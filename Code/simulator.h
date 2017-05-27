@@ -27,13 +27,13 @@
 #define SP 6	
 #define PC 7
  
-/* Flags  */
-#define C 0
-#define V 1
-#define Z 2
-#define N 3
-#define T 4
-#define I 5
+/* Flags  */ 
+#define C 1
+#define V 2
+#define Z 4
+#define N 8
+#define T 16
+#define I 32
 
 /* Mnemonic Opcode */
 /// ------------ ZERO OPERAND OPCODE --------------
@@ -120,9 +120,9 @@ typedef struct branch{
 struct double_operand{
 	unsigned short B:1; 
 	unsigned short Opcode:3;
-	unsigned short Mode_1:3;
+	unsigned short Mode_S:3;
 	unsigned short Source:3;
-	unsigned short Mode_2:3;
+	unsigned short Mode_D:3;
 	unsigned short Destination:3;
 }double_operand;
 

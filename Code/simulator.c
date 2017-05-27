@@ -220,67 +220,136 @@ unsigned short Effective_Address(FILE *trace, unsigned short mode, unsigned shor
 	unsigned short x;
 	switch(mode) {
 		
-		case R_DEF 		    : return Reg[source];
-					      break;
+		case R_DEF 			: return Reg[source];
+							  break;
 						 
-		case AUTOINCR 	            : return Reg[source];
-					      Reg[source] = Reg[source]+2;
-					      break;
+		case AUTOINCR 		: return Reg[source];
+					          Reg[source] = Reg[source]+2;
+					          break;
 								 
-		case AUTOINC_DEF            : return read_mem( ,DATA_READ,Reg[source]);
-					      Reg[source] = Reg[source]+2;
-					      break;
+		case AUTOINC_DEF    : return read_mem( trace,DATA_READ,Reg[source]);
+					          Reg[source] = Reg[source]+2;
+					          break;
 									  
-		case AUTODECR               : Reg[source] = Reg[source] - 2;
-					      return Reg[source];
-					      break;
+		case AUTODECR       : Reg[source] = Reg[source] - 2;
+					          return Reg[source];
+					          break;
 									
-		case AUTODECR_DEF           : Reg[source] = Reg[source] - 2;
-					      return read_mem(trace,DATA_READ,Reg[source]);
-					      break;
+		case AUTODECR_DEF   : Reg[source] = Reg[source] - 2;
+							  return read_mem(trace,DATA_READ,Reg[source]);
+							  break;
 									  
-		case INDEX                  : x = read_mem( ,DATA_READ,Reg[PC]);
-		                              Reg[source] = Reg[source] + x;
-					      Reg[PC] = Reg[PC] + 2;
-					      return Reg[source];
-					      break;
+		case INDEX          : x = read_mem( trace,DATA_READ,Reg[PC]);
+							  Reg[source] = Reg[source] + x;
+							  Reg[PC] = Reg[PC] + 2;
+							  return Reg[source];
+							  break;
 									  
-		case INDEX_DEF              : x = read_mem( ,DATA_READ,Reg[PC]);
-		                              Reg[source] = Reg[source] + x;
-					      Reg[PC] = Reg[PC] + 2;
-					      return read_mem(trace,DATA_READ, Reg[source]);
-					      break;
-									  
-		default                     : printf("Following mode doesn't require Effective Address calculation\n");
-		                 	      break;
+		case INDEX_DEF      : x = read_mem( trace,DATA_READ,Reg[PC]);
+							  Reg[source] = Reg[source] + x;
+							  Reg[PC] = Reg[PC] + 2;
+   							  return read_mem(trace,DATA_READ, Reg[source]);
+   							  break;
+   								  
+		default             : return source; 
+							  printf("Following mode doesn't require Effective Address calculation\n");
+							  break;
 									  
 	}
 }
 
 /* Double Operand Instruction Function */ 
 void func_doubleoperand(FILE *trace, instruction_set input_var){
-	unsigned short temp; 
+	unsigned short temp;
+	unsigned short addr_destination; /* effective address calculation results */ 
+	unsigned short addr_source; /* effective address calculation results */
+
+	/* Effective address calculation for source and destination */ 
+	addr_destination = Effective_Address(trace,input_var.TOP.Mode_D, input_var.TOP.Destination);
+	addr_source = Effective_Address(trace,input_var.TOP.Mode_S, input_var.TOP.Source);
+	
+	
 	switch(input_var.TOP.Opcode){
-		case MOV:
- 			  break; 
-		case CMP: break;
-		case BIT: break;
-		case BIC: break;
-		case BIS: break;
-		case ADD: break;
-		case SUB: break; 
+		case MOV: 	Reg[addr_destination] = Reg[addr_source]; 
+					PSW = 0; 
+					break; 
+				  
+		case CMP: 	temp = Reg[addr_source] + ~(Reg[addr_destination]) + 1;  
+					PSW = 0; 
+					if(temp == 0){
+							PSW = Z; 
+					}
+					
+					if(temp < 0){
+							PSW = PSW + N; 
+					}
+					
+					if(!(temp && 0100000) >> 15){
+							PSW = PSW + C;		
+					}
+					
+					/* not sure yet about sign overflow */ 
+					break;
+					
+		case BIT: 	/* BIT Test */ 
+					/* Computes dest & src */ 
+					temp = Reg[addr_destination] & Reg[addr_source];
+					PSW = C; 					
+					break;
+					
+		case BIC: 	/* Bit Clear */
+					Reg[addr_destination] &= ~Reg[addr_source]; 
+					PSW = C;						
+					break;
+					
+		case BIS: 	/* Bit set,a.k.a logical OR */
+					Reg[addr_destination] |= Reg[addr_source];
+					PSW = C; 
+					break;
+		
+		case ADD:   /* Add */ 
+					Reg[addr_destination] += Reg[addr_source]; 
+					PSW = C; 
+					/* SET FLAGS */
+					break;
+					
+		case SUB: 	/* SUB */
+					Reg[addr_destination] -= Reg[addr_source];
+					/* SET FLAGS */ 
+					break; 
 	}
 }
 
 /* One Half Intruction Function - Some additional two-operand require source operand */ 
 void func_onehalfoperand(FILE *trace, instruction_set input_var){
+	unsigned short temp;
+
+	/* WORK IN PROGRESS */ 
 	switch(input_var.OHOP.Opcode){
-		case MUL: break;
-		case DIV: break;	 
-		case ASH: break;
-		case ASHC: break;
-		case XOR: break;
-		case SOB: break;  		
+		case MUL:	Reg[input_var.OHOP.Register] * Reg[]; 
+					write_mem(); 
+					break;
+					
+		case DIV: 	/* Divide */ 
+					
+					break;
+					
+		case ASH:   /* Arithmetic shift */ 
+					
+					break;
+
+		case ASHC:  /* Arithmetic shift combined */ 
+					
+					break;
+					
+		case XOR:   /* Exclusive OR */ 
+					
+					break;
+
+					
+		case SOB:   /* Subtract one and branch */ 
+					
+					break;  		
 	}
 }
 
