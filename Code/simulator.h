@@ -60,6 +60,7 @@
 //---------------------------------------------------
 
 // Effective address calculation define //
+#define REG		0
 #define R_DEF   1
 #define AUTOINCR     2
 #define AUTOINC_DEF  3
@@ -180,8 +181,11 @@ void func_onehalfoperand(FILE *,instruction_set input_var);
 void func_conditionalbranch(FILE *,instruction_set input_var); 
 void jump(FILE *,instruction_set input_var); 
 void psw(FILE *,instruction_set input_var); 
-void func_otherinstruction(FILE *,instruction_set input_var); 
+void func_otherinstruction(FILE *,instruction_set input_var);
 
+/* Register Read and Write Functions */ 
+unsigned short reg_READ(FILE *trace, unsigned short mode, unsigned short source);
+void reg_WRITE(FILE *trace, unsigned short mode, unsigned short destination,unsigned short data);
 
 
 

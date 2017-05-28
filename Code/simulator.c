@@ -258,63 +258,119 @@ unsigned short Effective_Address(FILE *trace, unsigned short mode, unsigned shor
 	}
 }
 
+/* Register Read Function */ 
+/* Returns the 16 bit data in the Registers */ 
+unsigned short reg_READ(FILE *trace, unsigned short mode, unsigned short source) {
+	unsigned short temp;
+	switch(mode) {
+		case REG			: return Reg[source]; 
+							  break;
+	
+		default 			: temp = Effective_Address(trace, mode, source);
+							  return read_mem(trace,DATA_READ,temp); 
+							  break;									  
+	}
+}
+
+/* Register Write Function */ 
+/* Write the 16 bit data in the Registers */ 
+void reg_WRITE(FILE *trace, unsigned short mode, unsigned short destination,unsigned short data) {
+	unsigned short temp;
+	/* Only if it is in Reg mode, we write to the register destination otherwise we write back 
+	   to the memory to be read later for other addressing mode types */ 
+	switch(mode) {
+		case REG			: Reg[destination] = data;   
+							  break;
+	
+		default 			: temp = Effective_Address(trace, mode, destination);
+							  write_mem(trace,DATA_WRITE,temp,data); 
+							  break;									  
+	}
+}
+
+
+
+
+
 /* Double Operand Instruction Function */ 
 void func_doubleoperand(FILE *trace, instruction_set input_var){
-	unsigned short temp;
-	unsigned short addr_destination; /* effective address calculation results */ 
-	unsigned short addr_source; /* effective address calculation results */
-
-	/* Effective address calculation for source and destination */ 
-	addr_destination = Effective_Address(trace,input_var.TOP.Mode_D, input_var.TOP.Destination);
-	addr_source = Effective_Address(trace,input_var.TOP.Mode_S, input_var.TOP.Source);
-	
+	unsigned short result;	
+	unsigned short temp1;	
+	unsigned short temp2;	
 	
 	switch(input_var.TOP.Opcode){
-		case MOV: 	Reg[addr_destination] = Reg[addr_source]; 
-					PSW = 0; 
+		case MOV: 	result = reg_READ(trace,input_var.TOP.Modes_S,input_var.TOP.source);
+					reg_WRITE(trace,input_var.TOP.Mode_D, input_var.TOP.Destination, result);
+					// PSW = 0; 
 					break; 
 				  
-		case CMP: 	temp = Reg[addr_source] + ~(Reg[addr_destination]) + 1;  
-					PSW = 0; 
-					if(temp == 0){
-							PSW = Z; 
-					}
+		case CMP: 	temp1 = reg_READ(trace,input_var.TOP.Modes_S,input_var.TOP.source);
+					temp2 = reg_READ(trace,input_var.TOP.Modes_D,input_var.TOP.Destination); 
+					result = temp1 + ~temp2 + 1;
 					
-					if(temp < 0){
-							PSW = PSW + N; 
-					}
+					/* Flags not done yet */ 
+		
+					// PSW = 0; 
+					// if(temp == 0){
+							// PSW = Z; 
+					// }
 					
-					if(!(temp && 0100000) >> 15){
-							PSW = PSW + C;		
-					}
+					// if(temp < 0){
+							// PSW = PSW + N; 
+					// }
+					
+					// if(!(temp && 0100000) >> 15){
+							// PSW = PSW + C;		
+					// }
 					
 					/* not sure yet about sign overflow */ 
 					break;
 					
 		case BIT: 	/* BIT Test */ 
 					/* Computes dest & src */ 
-					temp = Reg[addr_destination] & Reg[addr_source];
-					PSW = C; 					
+					/* NOT STORED */
+					temp1 = reg_READ(trace,input_var.TOP.Modes_S,input_var.TOP.source);
+					temp2 = reg_READ(trace,input_var.TOP.Modes_D,input_var.TOP.Destination);					
+					result = temp1 ^ temp2; 
+					
+					// PSW = C; 					
 					break;
 					
 		case BIC: 	/* Bit Clear */
-					Reg[addr_destination] &= ~Reg[addr_source]; 
-					PSW = C;						
+					temp1 = ~reg_READ(trace,input_var.TOP.Modes_S,input_var.TOP.source);
+					temp2 = reg_READ(trace,input_var.TOP.Modes_D,input_var.TOP.Destination);
+					result = temp1 & temp2; 
+					reg_WRITE(trace,input_var.TOP.Mode_D, input_var.TOP.Destination, result);
+					
+					
+					// PSW = C;						
 					break;
 					
 		case BIS: 	/* Bit set,a.k.a logical OR */
-					Reg[addr_destination] |= Reg[addr_source];
-					PSW = C; 
+					temp1 = ~reg_READ(trace,input_var.TOP.Modes_S,input_var.TOP.source);
+					temp2 = reg_READ(trace,input_var.TOP.Modes_D,input_var.TOP.Destination);
+					result = temp1 | temp2; 
+					reg_WRITE(trace,input_var.TOP.Mode_D, input_var.TOP.Destination, result);
+
+					// PSW = C; 
 					break;
 		
 		case ADD:   /* Add */ 
-					Reg[addr_destination] += Reg[addr_source]; 
-					PSW = C; 
+					temp1 = reg_READ(trace,input_var.TOP.Modes_S,input_var.TOP.source);
+					temp2 = reg_READ(trace,input_var.TOP.Modes_D,input_var.TOP.Destination);
+					result = temp1 + temp2; 
+					reg_WRITE(trace,input_var.TOP.Mode_D, input_var.TOP.Destination, result);
+
+					// PSW = C; 
 					/* SET FLAGS */
 					break;
 					
 		case SUB: 	/* SUB */
-					Reg[addr_destination] -= Reg[addr_source];
+					temp1 = reg_READ(trace,input_var.TOP.Modes_S,input_var.TOP.source);
+					temp2 = reg_READ(trace,input_var.TOP.Modes_D,input_var.TOP.Destination);
+					result = temp1 - temp2; 
+					reg_WRITE(trace,input_var.TOP.Mode_D, input_var.TOP.Destination, result);
+					
 					/* SET FLAGS */ 
 					break; 
 	}
@@ -322,11 +378,16 @@ void func_doubleoperand(FILE *trace, instruction_set input_var){
 
 /* One Half Intruction Function - Some additional two-operand require source operand */ 
 void func_onehalfoperand(FILE *trace, instruction_set input_var){
-	unsigned short temp;
+	unsigned short temp1;
+	unsigned short temp2;
+	unsigned int result; 
+	
 
 	/* WORK IN PROGRESS */ 
 	switch(input_var.OHOP.Opcode){
-		case MUL:	Reg[input_var.OHOP.Register] * Reg[]; 
+		case MUL:	temp1 = reg_READ(trace,input_var.OHOP.Mode,input_var.OHOP.Source);
+					result = Reg[input_var.OHOP.Register] * temp1; 
+					
 					write_mem(); 
 					break;
 					
