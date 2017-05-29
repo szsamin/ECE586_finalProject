@@ -41,33 +41,56 @@
 #define NOP  0000240
 
 /// -------------DOUBLE OPERAND-------------------- 
-#define MOV 1		// Move: dest = src	
-#define CMP 2		// Compare : compute src - dest, set flags only	
-#define BIT 3 		// Bit test: compute dest & src, set flags only
-#define BIC 4		//Bit clear: dest &= ~src 
-#define BIS 5		// Bit set, a.k.a logic OR: dest |= src 
-#define ADD 6		// ADD, dest += src 
-#define SUB 16 		// Substract, dest -=  src 
+#define MOV 01		// Move: dest = src	
+#define CMP 02		// Compare : compute src - dest, set flags only	
+#define BIT 03 		// Bit test: compute dest & src, set flags only
+#define BIC 04		//Bit clear: dest &= ~src 
+#define BIS 05		// Bit set, a.k.a logic OR: dest |= src 
+#define ADD 06		// ADD, dest += src 
+#define SUB 016 		// Substract, dest -=  src 
 ///-------------------------------------------------
 
 ///--------------------------------------------------
-#define MUL 70		// Multiply: (R,R+1) = R*SRC 
-#define DIV 71		// Divide: Compute (R,R+1) / SRC, quotient in R, remainder R+1
-#define ASH 72		// Arithmetic shift: R <<= src, shift amount maybe be -32...31
-#define ASHC 73 	// Arithmetic shift combined: (R,R+1) <<= src, shift amount may be -32... 31
-#define XOR 74 		// Exclusive OR: dest ^= reg (word only) 
-#define SOB 77		// Subtract and branch: decrement register, if result non-zero, branch backward 0...63 words
+#define MUL 070		// Multiply: (R,R+1) = R*SRC 
+#define DIV 071		// Divide: Compute (R,R+1) / SRC, quotient in R, remainder R+1
+#define ASH 072		// Arithmetic shift: R <<= src, shift amount maybe be -32...31
+#define ASHC 073 	// Arithmetic shift combined: (R,R+1) <<= src, shift amount may be -32... 31
+#define XOR 074 		// Exclusive OR: dest ^= reg (word only) 
+#define SOB 077		// Subtract and branch: decrement register, if result non-zero, branch backward 0...63 words
 //---------------------------------------------------
 
 // Effective address calculation define //
-#define REG		0
-#define R_DEF   1
-#define AUTOINCR     2
-#define AUTOINC_DEF  3
-#define AUTODECR     4
-#define AUTODECR_DEF 5
-#define INDEX	     6
-#define INDEX_DEF    7
+#define REG		00
+#define R_DEF   01
+#define AUTOINCR     02
+#define AUTOINC_DEF  03
+#define AUTODECR     04
+#define AUTODECR_DEF 05
+#define INDEX	     06
+#define INDEX_DEF    07
+
+// Branch Define
+#define BR		01
+#define BNE     02
+#define BEQ     03
+#define BPL     00
+#define BMI     01
+#define BVC     04
+#define BVS     05
+#define BHIS    06
+#define BCC     06
+#define BLO     07
+#define BCS     07
+#define BGE     04
+#define BLT     05
+#define BGT     06
+#define BLE     07
+#define BHI     02
+#define BLOS    03
+
+
+
+
 
 
 /* Structures - For Decode */

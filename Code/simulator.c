@@ -310,19 +310,6 @@ void func_doubleoperand(FILE *trace, instruction_set input_var){
 					
 					/* Flags not done yet */ 
 		
-					// PSW = 0; 
-					// if(temp == 0){
-							// PSW = Z; 
-					// }
-					
-					// if(temp < 0){
-							// PSW = PSW + N; 
-					// }
-					
-					// if(!(temp && 0100000) >> 15){
-							// PSW = PSW + C;		
-					// }
-					
 					/* not sure yet about sign overflow */ 
 					break;
 					
@@ -376,44 +363,144 @@ void func_doubleoperand(FILE *trace, instruction_set input_var){
 	}
 }
 
-/* One Half Intruction Function - Some additional two-operand require source operand */ 
-void func_onehalfoperand(FILE *trace, instruction_set input_var){
-	unsigned short temp1;
-	unsigned short temp2;
-	unsigned int result; 
-	
+void func_conditionalbranch(FILE *trace,instruction_set input_var){
+	unsigned short temp;
+	unsigned short result; 
+	temp = read_mem(trace,DATA_READ,Reg[PC]);
+	result = temp + 2*input_var.BRANCH.Offset; 	
 
-	/* WORK IN PROGRESS */ 
-	switch(input_var.OHOP.Opcode){
-		case MUL:	temp1 = reg_READ(trace,input_var.OHOP.Mode,input_var.OHOP.Source);
-					result = Reg[input_var.OHOP.Register] * temp1; 
-					
-					write_mem(); 
-					break;
-					
-		case DIV: 	/* Divide */ 
-					
-					break;
-					
-		case ASH:   /* Arithmetic shift */ 
-					
-					break;
-
-		case ASHC:  /* Arithmetic shift combined */ 
-					
-					break;
-					
-		case XOR:   /* Exclusive OR */ 
-					
-					break;
-
-					
-		case SOB:   /* Subtract one and branch */ 
-					
-					break;  		
+	if(input_var.BRANCH.x){
+		switch(input_var.BRANCH.Opcode){
+			case BPL :  if(N == 0){
+							Reg[PC] = result;
+						}
+						break;
+						
+			case BMI :  if(N == 1){
+							Reg[PC] = result; 
+						}
+						break;
+						
+			case BVC : if(V == 0){
+							Reg[PC] = result; 
+					   }
+						break; 
+						
+			case BVS : if(V == 1){
+							Reg[PC] = result; 
+					   } 
+						break;
+							
+			case BHIS: if(C == 0){
+							Reg[PC] = result; 
+					   }
+						break; 
+						
+			case BCC : if(C == 0){
+							Reg[PC] = result; 
+					   }
+						break;
+						
+			case BLO : if(C == 1){
+							Reg[PC] = result; 
+					   }
+						break;
+						
+			case BCS : if(C == 1){
+							Reg[PC] = result; 
+					   }
+						break; 
+						
+			case BHI : if((C | Z) == 0){
+							Reg[PC] = result; 
+					   }
+						break;
+						
+			case BLOS: if((C | Z) == 1){
+							Reg[PC] = result; 
+					   }
+						break; 
+						
+		}
+	}
+	else{
+		switch(input_var.BRANCH.Opcode){
+			case BR :   Reg[PC] = result; 
+						break;  
+						
+			case BNE:   if(Z == 0){
+							Reg[PC] = result; 					
+						}
+						break;
+						
+			case BEQ:   if(Z == 1){
+							Reg[PC] = result; 
+						}
+						break; 
+						
+			case BEG:   if( N ^ V == 0){
+							Reg[PC] = result; 
+						}
+						break; 
+						
+			case BLT:   if( N ^ Z == 1){
+							Reg[PC] = result; 
+						}
+						break; 
+						
+			case BGT: 	if( (Z | (N ^ V)) == 0){
+							Reg[PC] = result;
+						}
+						break;
+						
+			case BLE: 	if( (Z | (N ^ V)) == 1){
+							Reg[PC] = result;					
+						}
+						break; 
+		}
 	}
 }
 
+
+ // STILL NEED TO FIGURE IF WE NEED ONE HALF OPERATION 
+
+// /* One Half Intruction Function - Some additional two-operand require source operand */ 
+// void func_onehalfoperand(FILE *trace, instruction_set input_var){
+	// unsigned short temp1;
+	// unsigned short temp2;
+	// unsigned int result; 
+	
+
+	// /* WORK IN PROGRESS */ 
+	// switch(input_var.OHOP.Opcode){
+		// case MUL:	temp1 = reg_READ(trace,input_var.OHOP.Mode,input_var.OHOP.Source);
+					// result = Reg[input_var.OHOP.Register] * temp1; 
+					
+					// write_mem(); 
+					// break;
+					
+		// case DIV: 	/* Divide */ 
+					
+					// break;
+					
+		// case ASH:   /* Arithmetic shift */ 
+					
+					// break;
+
+		// case ASHC:  /* Arithmetic shift combined */ 
+					
+					// break;
+					
+		// case XOR:   /* Exclusive OR */ 
+					
+					// break;
+
+					
+		// case SOB:   /* Subtract one and branch */ 
+					
+					// break;  		
+	// }
+// }
 
 
 int open_file(char *arr){ 
