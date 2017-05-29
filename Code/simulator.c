@@ -6,10 +6,10 @@
 */ 
 
 // Library Declarations 
-#include <stdlib.h> 
-#include <stdio.h> 
-#include <string.h> 
-#include <unistd.h> 
+#include "/usr/include/stdlib.h"
+#include "/usr/include/stdio.h"
+#include "/usr/include/string.h"
+#include "/usr/include/unistd.h" 
 #include "../Code/simulator.h" 
 
 
@@ -166,7 +166,7 @@ void display(){
 	/* Print everything in the memory */ /* The correct format specifier to print address is %p followed by type (void *) */ 
 	for(int i = 0; i < sizeof(mem); i++){
 	    fprintf(f,"-----------------------------------------\n"); 
-	    fprintf(f,"|   Content - %o  |     Address - %p	| \n",(unsigned char)mem[i],i);
+	    fprintf(f,"|   Content - %o  |     Address - %d	| \n",(unsigned char)mem[i],i);
 	    fprintf(f,"-----------------------------------------\n"); 
 	}
 	
@@ -299,13 +299,13 @@ void func_doubleoperand(FILE *trace, instruction_set input_var){
 	unsigned short temp2;	
 	
 	switch(input_var.TOP.Opcode){
-		case MOV: 	result = reg_READ(trace,input_var.TOP.Modes_S,input_var.TOP.source);
+		case MOV: 	result = reg_READ(trace,input_var.TOP.Mode_S,input_var.TOP.Source);
 					reg_WRITE(trace,input_var.TOP.Mode_D, input_var.TOP.Destination, result);
 					// PSW = 0; 
 					break; 
 				  
-		case CMP: 	temp1 = reg_READ(trace,input_var.TOP.Modes_S,input_var.TOP.source);
-					temp2 = reg_READ(trace,input_var.TOP.Modes_D,input_var.TOP.Destination); 
+		case CMP: 	temp1 = reg_READ(trace,input_var.TOP.Mode_S,input_var.TOP.Source);
+					temp2 = reg_READ(trace,input_var.TOP.Mode_D,input_var.TOP.Destination); 
 					result = temp1 + ~temp2 + 1;
 					
 					/* Flags not done yet */ 
@@ -316,16 +316,16 @@ void func_doubleoperand(FILE *trace, instruction_set input_var){
 		case BIT: 	/* BIT Test */ 
 					/* Computes dest & src */ 
 					/* NOT STORED */
-					temp1 = reg_READ(trace,input_var.TOP.Modes_S,input_var.TOP.source);
-					temp2 = reg_READ(trace,input_var.TOP.Modes_D,input_var.TOP.Destination);					
+					temp1 = reg_READ(trace,input_var.TOP.Mode_S,input_var.TOP.Source);
+					temp2 = reg_READ(trace,input_var.TOP.Mode_D,input_var.TOP.Destination);					
 					result = temp1 ^ temp2; 
 					
 					// PSW = C; 					
 					break;
 					
 		case BIC: 	/* Bit Clear */
-					temp1 = ~reg_READ(trace,input_var.TOP.Modes_S,input_var.TOP.source);
-					temp2 = reg_READ(trace,input_var.TOP.Modes_D,input_var.TOP.Destination);
+					temp1 = ~reg_READ(trace,input_var.TOP.Mode_S,input_var.TOP.Source);
+					temp2 = reg_READ(trace,input_var.TOP.Mode_D,input_var.TOP.Destination);
 					result = temp1 & temp2; 
 					reg_WRITE(trace,input_var.TOP.Mode_D, input_var.TOP.Destination, result);
 					
@@ -334,31 +334,33 @@ void func_doubleoperand(FILE *trace, instruction_set input_var){
 					break;
 					
 		case BIS: 	/* Bit set,a.k.a logical OR */
-					temp1 = ~reg_READ(trace,input_var.TOP.Modes_S,input_var.TOP.source);
-					temp2 = reg_READ(trace,input_var.TOP.Modes_D,input_var.TOP.Destination);
+					temp1 = ~reg_READ(trace,input_var.TOP.Mode_S,input_var.TOP.Source);
+					temp2 = reg_READ(trace,input_var.TOP.Mode_D,input_var.TOP.Destination);
 					result = temp1 | temp2; 
 					reg_WRITE(trace,input_var.TOP.Mode_D, input_var.TOP.Destination, result);
 
 					// PSW = C; 
 					break;
 		
-		case ADD:   /* Add */ 
-					temp1 = reg_READ(trace,input_var.TOP.Modes_S,input_var.TOP.source);
-					temp2 = reg_READ(trace,input_var.TOP.Modes_D,input_var.TOP.Destination);
+		case ADDSUB:   /* Add */
+			       	if(input_var.TOP.B == 0){ 
+					temp1 = reg_READ(trace,input_var.TOP.Mode_S,input_var.TOP.Source);
+					temp2 = reg_READ(trace,input_var.TOP.Mode_D,input_var.TOP.Destination);
 					result = temp1 + temp2; 
 					reg_WRITE(trace,input_var.TOP.Mode_D, input_var.TOP.Destination, result);
 
 					// PSW = C; 
 					/* SET FLAGS */
-					break;
-					
-		case SUB: 	/* SUB */
-					temp1 = reg_READ(trace,input_var.TOP.Modes_S,input_var.TOP.source);
-					temp2 = reg_READ(trace,input_var.TOP.Modes_D,input_var.TOP.Destination);
+				}
+				else{	
+			 	/* SUB */
+					temp1 = reg_READ(trace,input_var.TOP.Mode_S,input_var.TOP.Source);
+					temp2 = reg_READ(trace,input_var.TOP.Mode_D,input_var.TOP.Destination);
 					result = temp1 - temp2; 
 					reg_WRITE(trace,input_var.TOP.Mode_D, input_var.TOP.Destination, result);
 					
-					/* SET FLAGS */ 
+					/* SET FLAGS */
+				} 
 					break; 
 	}
 }
@@ -390,22 +392,22 @@ void func_conditionalbranch(FILE *trace,instruction_set input_var){
 							Reg[PC] = result; 
 					   } 
 						break;
-							
+			/*				
 			case BHIS: if(C == 0){
 							Reg[PC] = result; 
 					   }
 						break; 
-						
+			*/			
 			case BCC : if(C == 0){
 							Reg[PC] = result; 
 					   }
 						break;
-						
+			/*			
 			case BLO : if(C == 1){
 							Reg[PC] = result; 
 					   }
 						break;
-						
+			*/			
 			case BCS : if(C == 1){
 							Reg[PC] = result; 
 					   }
@@ -437,12 +439,12 @@ void func_conditionalbranch(FILE *trace,instruction_set input_var){
 							Reg[PC] = result; 
 						}
 						break; 
-						
+			/*			
 			case BEG:   if( N ^ V == 0){
 							Reg[PC] = result; 
 						}
 						break; 
-						
+			*/			
 			case BLT:   if( N ^ Z == 1){
 							Reg[PC] = result; 
 						}

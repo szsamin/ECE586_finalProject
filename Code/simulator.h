@@ -4,8 +4,8 @@
    Description: Includes all the Register defines, flag defines, type define, function prototypes 
 
 */ 
-#include <stdio.h>
-#include <string.h>
+#include "/usr/include/stdio.h"
+#include "/usr/include/string.h"
 
 // DEFINES
 #define byte_length 4 
@@ -46,8 +46,8 @@
 #define BIT 03 		// Bit test: compute dest & src, set flags only
 #define BIC 04		//Bit clear: dest &= ~src 
 #define BIS 05		// Bit set, a.k.a logic OR: dest |= src 
-#define ADD 06		// ADD, dest += src 
-#define SUB 016 		// Substract, dest -=  src 
+#define ADDSUB 06		// ADD, dest += src 
+ 	// Substract, dest -=  src 
 ///-------------------------------------------------
 
 ///--------------------------------------------------
