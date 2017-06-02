@@ -1,19 +1,33 @@
+CC = /usr/bin
 PATH = ~shadman/ECE586_finalProject
+ROOT =  /usr/bin
+FAUST = ~faustm/bin
 
 gensource: macro11 obj2ascii
 
 macro11:
-	~faustm/bin/macro11 ${PATH}/TestFiles/source.mac -o ${PATH}/TestFiles/source.obj -l ${PATH}/Testfiles/source.lst	 
+	@ ${FAUST}/macro11 ${PATH}/TestFiles/source.mac -o ${PATH}/TestFiles/source.obj -l ${PATH}/Testfiles/source.lst	 
 
-obj2ascii: 
-	~faustm/bin/obj2ascii ${PATH}/TestFiles/source.obj ${PATH}/TestFiles/txt.ascii
+obj2ascii:
+	@ ${FAUST}/obj2ascii ${PATH}/TestFiles/source.obj ${PATH}/TestFiles/source.ascii
 
-all:	compile run 
+all: compile run 
 
 compile: 
-	gcc simulator.c simulator.h
+	${CC} -o simulator simulator.c
+
+simulator:
+	${CC} -o simulator simulator.c
+
+header: simulator
+	${CC} -c simulator.h -o header.o
+	
+output: header
+	${CC} code.o header.o -o output	
+
+	 	 	
 run:
 	./a.out
 
-show: 
+show:
 	vim ../file.txt 

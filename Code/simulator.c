@@ -42,7 +42,9 @@ int main(int argc,int argv){
 
 	  done = 0; // Ignores the Fetch > Decode > Execute for now 
 	  while(!done){
-		 
+		
+		getchar(); 
+ 
 	   	// Fetch Instruction  
 	  	fetched_instruction = (union instruction_set)read_mem(trace,INSTRUCTION_FETCH,Reg[PC]); 
 	  	printf("Instruction Fetched !\n");
