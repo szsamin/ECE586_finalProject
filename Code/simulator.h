@@ -26,14 +26,6 @@
 #define R5 5
 #define SP 6	
 #define PC 7
- 
-/* Flags  */ 
-#define C 1
-#define V 2
-#define Z 4
-#define N 8
-#define T 16
-#define I 32
 
 /* Mnemonic Opcode */
 /// ------------ ZERO OPERAND OPCODE --------------
@@ -58,6 +50,25 @@
 #define XOR 074 		// Exclusive OR: dest ^= reg (word only) 
 #define SOB 077		// Subtract and branch: decrement register, if result non-zero, branch backward 0...63 words
 //---------------------------------------------------
+
+
+//=========== SINGLE OPERAND ===================
+#define CLR 00050	// Clear 
+#define INC 00052   	// Increment
+#define DEC 00053	// Decrement
+#define ADC 00055	// Add carry
+#define SBC 00056	// Substract carry
+#define TST 00057	// Test 
+#define NEG 00054	// Negate
+#define COM 00051	// Complement
+#define ROR 00060	// Rotate right
+#define ROL 00061	// Rotate left
+#define ASR 00062	// arithmetic shift right
+#define ASL 00063	// arithmetic shift left
+#define SWAB 00003	// Swap bytes
+#define SXT 00067	// sign extend
+#define JMP 00001	// Jump
+
 
 // Effective address calculation define //
 #define REG		00
@@ -150,10 +161,8 @@ struct double_operand{
 	unsigned short Destination:3;
 }double_operand;
 
-struct single_operand{
-	unsigned short B:1;
-	unsigned short Remainder:4;            
-	unsigned short Opcode:5; 
+struct single_operand{            
+	unsigned short Opcode:10;  
 	unsigned short Mode:3;
 	unsigned short Register:3;
 }single_operand;
@@ -171,7 +180,17 @@ struct conditional{
 	unsigned short Remainder:4; 
 	unsigned short Opcode:3;
 	unsigned short Offset:8;
-}conditional; 
+}conditional;
+
+/* PSW Structuree */ 
+struct psw{
+	unsigned short N:1;	// Negatives
+	unsigned short Z:1;	// Zeros
+	unsigned short V:1;	// Overflow
+	unsigned short C:1;     // Carry
+	unsigned short T:1;	// Trap
+	unsigned short I:11;    // Interrupt Priority Level
+}psw;  
 
  
 
@@ -193,6 +212,7 @@ typedef union instruction_set{
 // Function prototypes
 int open_file(char *arr);
 void display();  
+void print_REG(); 
 void write_mem(FILE*,unsigned short type, unsigned short address, unsigned short data);
 unsigned short read_mem(FILE*, unsigned short type, unsigned short address);
 unsigned short Effective_address(FILE*, unsigned short mode, unsigned short source); 
@@ -202,13 +222,13 @@ void func_doubleoperand(FILE *,instruction_set input_var);
 void func_singleoperand(FILE *,instruction_set input_var);
 void func_onehalfoperand(FILE *,instruction_set input_var);  
 void func_conditionalbranch(FILE *,instruction_set input_var); 
-void jump(FILE *,instruction_set input_var); 
-void psw(FILE *,instruction_set input_var); 
+void func_jump(FILE *,instruction_set input_var); 
+void func_psw(FILE *,instruction_set input_var); 
 void func_otherinstruction(FILE *,instruction_set input_var);
 
 /* Register Read and Write Functions */ 
-unsigned short reg_READ(FILE *trace, unsigned short mode, unsigned short source);
-void reg_WRITE(FILE *trace, unsigned short mode, unsigned short destination,unsigned short data);
+signed short reg_READ(FILE *trace, unsigned short mode, unsigned short source);
+void reg_WRITE(FILE *trace, unsigned short mode, unsigned short destination,signed short data);
 
 
 

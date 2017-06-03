@@ -17,7 +17,6 @@
 char dataStr[MEM];  				
 unsigned char mem[MEM]; 		// Memory size declaration 
 unsigned short int Reg [8]; 		// Register size declaration 
-unsigned short int PSW; 		// 
 
 int main(int argc,int argv){
 	  /* initial step read file */ 
@@ -27,7 +26,7 @@ int main(int argc,int argv){
 	  int done = 0;
 
 	  /* Initial Starting address */ 
-          Reg[PC] = 2; 
+          Reg[PC] = 8; 
 	  /* Add a command line if else - if the user does not specify a starting address, the starting address defaults to 0 */ 
 	  
 	  instruction_set  fetched_instruction; 
@@ -43,7 +42,9 @@ int main(int argc,int argv){
 	  done = 0; // Ignores the Fetch > Decode > Execute for now 
 	  while(!done){
 		
-		getchar(); 
+		// Step by Step Execution 
+		// Waits for Enter Key press	
+		getchar();	
  
 	   	// Fetch Instruction  
 	  	fetched_instruction = (union instruction_set)read_mem(trace,INSTRUCTION_FETCH,Reg[PC]); 
@@ -95,23 +96,26 @@ int main(int argc,int argv){
 						}
 						else{
 							printf("One operand Instruction\n"); 
-
+							func_singleoperand(trace,fetched_instruction);
 						}		
 					}
 					else{
 						/* If bit 11 thru 6 is true it is SWAB operation or else it is (Other Instructions, Branch, RTS, PSW)  */
 						if(((fetched_instruction.fetched & 0x0FC0) >> 6) == 03){
-							printf("SWAB Operation\n"); 	
+							printf("SWAB Operation\n");
+							func_singleoperand(trace,fetched_instruction);  	
 
 						}
 						/* Else if bits 11 thru 8 is zero it is not zero it is a branch instruction otherwise (RTS | PSW) */
 						else if(((fetched_instruction.fetched & 0x0F00) >> 8) != 0){
-							printf("Branch Instruction\n"); 
+							printf("Branch Instruction\n");
+							func_conditionalbranch(trace,fetched_instruction); 
 							}
 						else{
 							if(((fetched_instruction.fetched & 0x0080) >> 7) == 01){
 								if(((fetched_instruction.fetched & 0x00F8) >> 3) == 010){
-									printf("RTS Instruction\n"); 
+									printf("RTS Instruction\n");
+									 
 								}
 								else{
 									printf("PSW Instruction\n"); 
@@ -127,25 +131,24 @@ int main(int argc,int argv){
 
 				/* Matches with - Branch instructions */ 
 				case 010:
-					printf("Branch Instruction\n"); 
+					printf("Branch Instruction\n");
+					func_conditionalbranch(trace,fetched_instruction); 
 					break; 
 				/* If none of the above sets are a match it is a two_operand instructions */ 
 				default:
-					printf("Two Operand Instruction\n"); 
+					printf("Two Operand Instruction\n");
+					func_doubleoperand(trace,fetched_instruction);  
 			}
 			
 		}
 		// Execute Instruction 
-		 
+		print_REG();  
 	 
 	
 		// Increment 
-	        Reg[PC] = Reg[PC] + 2; 	
+	        Reg[PC] = Reg[PC] + 2;
+		   	
 	 }
-	  	
-	
-
-	  
 
 	  /* Throw data into mem */ 
 			
@@ -155,6 +158,25 @@ int main(int argc,int argv){
 	  /* Trace file end */ 
 	  fclose(trace); 
 	  return(0); 
+}
+
+void print_REG(){
+	// Step by step Print all the registers and affected Flags //
+	printf("-------------------- NEW INSTRUCTION ----------------\n");
+	printf("Reg 0 - - - - %o\n",Reg[R0]); 
+	printf("Reg 1 - - - - %o\n",Reg[R1]);
+	printf("Reg 2 - - - - %o\n",Reg[R2]); 
+	printf("Reg 3 - - - - %o\n",Reg[R3]);
+	printf("Reg 4 - - - - %o\n",Reg[R4]);
+	printf("Reg 5 - - - - %o\n",Reg[R5]); 
+	printf("SP - - - - -  %o\n",Reg[SP]);
+	printf("PC - - - - -  %o\n",Reg[PC]); 
+	printf("=================FLAGS==============================\n");
+	printf("Carry C - -  %o\n",psw.C); 
+	printf("Overflow V - %o\n",psw.V);
+	printf("Zero Z - - - %o\n",psw.Z);
+	printf("Negative N - %o\n",psw.N);
+	printf("------------------- END OF INSTRUCTION --------------\n");
 }
 
 void display(){ 
@@ -222,12 +244,12 @@ unsigned short Effective_Address(FILE *trace, unsigned short mode, unsigned shor
 	unsigned short x;
 	switch(mode) {
 		
-		case R_DEF 			: return Reg[source];
-							  break;
+		case R_DEF 	    : return Reg[source];
+				      break;
 						 
-		case AUTOINCR 		: return Reg[source];
-					          Reg[source] = Reg[source]+2;
-					          break;
+		case AUTOINCR       : return Reg[source];
+				      Reg[source] = Reg[source]+2;
+				      break;
 								 
 		case AUTOINC_DEF    : return read_mem( trace,DATA_READ,Reg[source]);
 					          Reg[source] = Reg[source]+2;
@@ -262,7 +284,7 @@ unsigned short Effective_Address(FILE *trace, unsigned short mode, unsigned shor
 
 /* Register Read Function */ 
 /* Returns the 16 bit data in the Registers */ 
-unsigned short reg_READ(FILE *trace, unsigned short mode, unsigned short source) {
+signed short reg_READ(FILE *trace, unsigned short mode, unsigned short source) {
 	unsigned short temp;
 	switch(mode) {
 		case REG			: return Reg[source]; 
@@ -276,7 +298,7 @@ unsigned short reg_READ(FILE *trace, unsigned short mode, unsigned short source)
 
 /* Register Write Function */ 
 /* Write the 16 bit data in the Registers */ 
-void reg_WRITE(FILE *trace, unsigned short mode, unsigned short destination,unsigned short data) {
+void reg_WRITE(FILE *trace, unsigned short mode, unsigned short destination,signed short data) {
 	unsigned short temp;
 	/* Only if it is in Reg mode, we write to the register destination otherwise we write back 
 	   to the memory to be read later for other addressing mode types */ 
@@ -296,74 +318,297 @@ void reg_WRITE(FILE *trace, unsigned short mode, unsigned short destination,unsi
 
 /* Double Operand Instruction Function */ 
 void func_doubleoperand(FILE *trace, instruction_set input_var){
-	unsigned short result;	
-	unsigned short temp1;	
-	unsigned short temp2;	
+	signed int result;	
+	/* temps used for comparing */
+	signed short temp1;	
+	signed short temp2;	
 	
 	switch(input_var.TOP.Opcode){
-		case MOV: 	result = reg_READ(trace,input_var.TOP.Mode_S,input_var.TOP.Source);
-					reg_WRITE(trace,input_var.TOP.Mode_D, input_var.TOP.Destination, result);
-					// PSW = 0; 
-					break; 
-				  
-		case CMP: 	temp1 = reg_READ(trace,input_var.TOP.Mode_S,input_var.TOP.Source);
-					temp2 = reg_READ(trace,input_var.TOP.Mode_D,input_var.TOP.Destination); 
-					result = temp1 + ~temp2 + 1;
-					
-					/* Flags not done yet */ 
-		
-					/* not sure yet about sign overflow */ 
-					break;
-					
-		case BIT: 	/* BIT Test */ 
-					/* Computes dest & src */ 
-					/* NOT STORED */
-					temp1 = reg_READ(trace,input_var.TOP.Mode_S,input_var.TOP.Source);
-					temp2 = reg_READ(trace,input_var.TOP.Mode_D,input_var.TOP.Destination);					
-					result = temp1 ^ temp2; 
-					
-					// PSW = C; 					
-					break;
-					
-		case BIC: 	/* Bit Clear */
-					temp1 = ~reg_READ(trace,input_var.TOP.Mode_S,input_var.TOP.Source);
-					temp2 = reg_READ(trace,input_var.TOP.Mode_D,input_var.TOP.Destination);
-					result = temp1 & temp2; 
-					reg_WRITE(trace,input_var.TOP.Mode_D, input_var.TOP.Destination, result);
-					
-					
-					// PSW = C;						
-					break;
-					
-		case BIS: 	/* Bit set,a.k.a logical OR */
-					temp1 = ~reg_READ(trace,input_var.TOP.Mode_S,input_var.TOP.Source);
-					temp2 = reg_READ(trace,input_var.TOP.Mode_D,input_var.TOP.Destination);
-					result = temp1 | temp2; 
-					reg_WRITE(trace,input_var.TOP.Mode_D, input_var.TOP.Destination, result);
+		case MOV: result = reg_READ(trace,input_var.TOP.Mode_S,input_var.TOP.Source);
+			  reg_WRITE(trace,input_var.TOP.Mode_D, input_var.TOP.Destination, result);
+			  printf("MOV INSTRUCTION\n");  
+			  if(result == 0){
+			  	psw.Z = 1; 
+			  }else{psw.Z = 0;}
 
-					// PSW = C; 
-					break;
+			  if(result < 0){
+				psw.N = 1; 
+			  }else{psw.N = 0;}
+
+			  psw.V = 0; 
+			  break; 
+				  
+		case CMP: temp1 = reg_READ(trace,input_var.TOP.Mode_S,input_var.TOP.Source);
+			  temp2 = reg_READ(trace,input_var.TOP.Mode_D,input_var.TOP.Destination); 
+			  result = temp1 + ~temp2 + 1;
+			  printf("CMP Instruction\n");
+					
+			  if(result == 0){  		   
+			  	psw.Z = 1; 		
+			  }else{psw.Z = 0;} 		
+	   	
+			  if(result < 0){
+				psw.N = 1;  		  /* not sure yet about sign overflow */ 
+			  }else{psw.N = 0;} 
+ 
+			  psw.C = !((result & 020000) >> 15); 
+			  /* Check for overflow bit - if source MSB XOR destination MSB is true, also negate of destination MSB XOR result MSB is true, then overflow must be true */ 
+		          psw.V = (((temp1 & 0200000)>> 15) ^ (( temp2 & 020000 >> 15))) && !(((temp2 & 020000) >> 15) && (result & 020000) >> 15); 	
+			
+
+			  break;
+					
+		case BIT: /* BIT Test */ 
+			  /* Computes dest & src */ 
+			  /* NOT STORED */
+			  temp1 = reg_READ(trace,input_var.TOP.Mode_S,input_var.TOP.Source);
+			  temp2 = reg_READ(trace,input_var.TOP.Mode_D,input_var.TOP.Destination);					
+			  result = temp1 ^ temp2; 
+			  if(result == 0){
+			  	psw.Z = 1; 
+			  }else{psw.Z = 0;}
+
+			  if(result < 0){
+				psw.N = 1; 
+			  }else{psw.N = 0;}
+ 
+			  psw.V = 0;						
+			  break;
+					
+		case BIC: /* Bit Clear */
+			  temp1 = ~reg_READ(trace,input_var.TOP.Mode_S,input_var.TOP.Source);
+			  temp2 = reg_READ(trace,input_var.TOP.Mode_D,input_var.TOP.Destination);
+			  result = temp1 & temp2; 
+			  reg_WRITE(trace,input_var.TOP.Mode_D, input_var.TOP.Destination, result);
+					
+			  if(result == 0){
+			  	psw.Z = 1; 
+			  }else{psw.Z = 0;}
+
+			  if(result < 0){
+				psw.N = 1; 
+			  }else{psw.N = 0;}
+
+			  psw.V = 0; 
+										
+			  break;
+					
+		case BIS: /* Bit set,a.k.a logical OR */
+			  temp1 = ~reg_READ(trace,input_var.TOP.Mode_S,input_var.TOP.Source);
+			  temp2 = reg_READ(trace,input_var.TOP.Mode_D,input_var.TOP.Destination);
+			  result = temp1 | temp2; 
+			  reg_WRITE(trace,input_var.TOP.Mode_D, input_var.TOP.Destination, result);
+			  
+			  if(result == 0){
+			  	psw.Z = 1; 
+			  }else{psw.Z = 0;}
+
+			  if(result < 0){
+				psw.N = 1; 
+			  }else{psw.N = 0;}
+
+			  psw.V = 0;  
+			  break;
 		
 		case ADDSUB:   /* Add */
-			       	if(input_var.TOP.B == 0){ 
-					temp1 = reg_READ(trace,input_var.TOP.Mode_S,input_var.TOP.Source);
-					temp2 = reg_READ(trace,input_var.TOP.Mode_D,input_var.TOP.Destination);
-					result = temp1 + temp2; 
-					reg_WRITE(trace,input_var.TOP.Mode_D, input_var.TOP.Destination, result);
+		  	if(input_var.TOP.B == 0){ 
+				temp1 = reg_READ(trace,input_var.TOP.Mode_S,input_var.TOP.Source);
+				temp2 = reg_READ(trace,input_var.TOP.Mode_D,input_var.TOP.Destination);
+				result = temp1 + temp2; 
+				reg_WRITE(trace,input_var.TOP.Mode_D, input_var.TOP.Destination, result);
+			        if(result == 0){
+			              psw.Z = 1; 
+				}else{psw.Z = 0;}
 
-					// PSW = C; 
-					/* SET FLAGS */
+			        if(result < 0){
+				      psw.N = 1; 
+			        }else{psw.N = 0;}
+			 	 psw.C = ((result & 020000) >> 15); 
+			 	 /* Check for overflow bit - if the negate of source MSB XOR destination MSB is true, also destination MSB XOR result MSB is true, then overflow must be true */ 
+		          	psw.V = !(((temp1 & 0200000)>> 15) ^ (( temp2 & 020000 >> 15))) && (((temp2 & 020000) >> 15) && (result & 020000) >> 15);
+				break; 	
 				}
-				else{	
+			else{	
 			 	/* SUB */
-					temp1 = reg_READ(trace,input_var.TOP.Mode_S,input_var.TOP.Source);
-					temp2 = reg_READ(trace,input_var.TOP.Mode_D,input_var.TOP.Destination);
-					result = temp1 - temp2; 
-					reg_WRITE(trace,input_var.TOP.Mode_D, input_var.TOP.Destination, result);
-					
-					/* SET FLAGS */
+				temp1 = reg_READ(trace,input_var.TOP.Mode_S,input_var.TOP.Source);
+				temp2 = reg_READ(trace,input_var.TOP.Mode_D,input_var.TOP.Destination);
+				result = temp2 + ~temp1 + 1; 
+				reg_WRITE(trace,input_var.TOP.Mode_D, input_var.TOP.Destination, result);
+			  	if(result == 0){
+			  	psw.Z = 1; 
+			 	 }else{psw.Z = 0;}
+
+			  	if(result < 0){
+				      psw.N = 1; 
+			  	}else{psw.N = 0;}
+
+			 	 psw.V = 0; 
+				
+			  	psw.C = !((result & 020000) >> 15); 
+			  	/* Check for overflow bit - if source MSB XOR destination MSB is true, also negate of destination MSB XOR result MSB is true, then overflow must be true */ 
+		         	 psw.V = (((temp1 & 0200000)>> 15) ^ (( temp2 & 020000 >> 15))) && !(((temp2 & 020000) >> 15) && (result & 020000) >> 15); 	
 				} 
-					break; 
+				break; 
+	}
+}
+
+void func_singleoperand(FILE *trace,instruction_set input_var){
+	signed short result;
+	signed short temp1; 
+	signed short temp2; 	
+
+
+	switch(input_var.OOP.Opcode){
+		
+		case CLR: reg_WRITE(trace,input_var.OOP.Mode,input_var.OOP.Register,0); 
+			  psw.Z = 1;
+			  psw.N = 0;
+			  psw.C = 0;
+			  psw.V = 0; 
+
+			  break;
+
+		case INC: 
+			  temp1 = reg_READ(trace,input_var.OOP.Mode,input_var.OOP.Register); 
+			  result = temp1 + 1; 
+			  reg_WRITE(trace,input_var.OOP.Mode,input_var.OOP.Register,result); 
+
+  			  psw.Z = (result == 0) ? 1 : 0;
+			  psw.N = (result < 0) ? 1 : 0; 
+			  psw.V = (temp1 == 0077777) ? 1 : 0; 
+			  
+			  break;
+
+		case DEC: 
+			  temp1 = reg_READ(trace,input_var.OOP.Mode,input_var.OOP.Register); 
+			  result = temp1 - 1; 
+			  reg_WRITE(trace,input_var.OOP.Mode,input_var.OOP.Register,result); 
+			  printf("DEC Instruction"); 
+  			  psw.Z = (result == 0) ? 1 : 0;
+			  psw.N = (result < 0) ? 1 : 0; 
+			  psw.C = (temp1 == 0100000) ? 1:0;  
+	
+			  break;
+		case ADC: 
+			  temp1 = reg_READ(trace,input_var.OOP.Mode,input_var.OOP.Register); 
+			  result = temp1 + psw.C; 
+			  reg_WRITE(trace,input_var.OOP.Mode,input_var.OOP.Register,result); 
+
+  			  psw.Z = (result == 0) ? 1 : 0;
+			  psw.N = (result < 0) ? 1 : 0; 
+			  psw.V = ((temp1 == 0077777) && (psw.C)) ? 1 : 0; 
+			  psw.C = ((temp1 == 0177777) && (psw.C)) ? 1 : 0; 
+
+			  break;
+
+		case SBC: 
+			  temp1 = reg_READ(trace,input_var.OOP.Mode,input_var.OOP.Register); 
+			  result = temp1 - psw.C; 
+			  reg_WRITE(trace,input_var.OOP.Mode,input_var.OOP.Register,result); 
+
+  			  psw.Z = (result == 0) ? 1 : 0;
+			  psw.N = (result < 0) ? 1 : 0; 
+			  psw.V = (temp1 == 0100000) ? 1 : 0; 
+			  psw.C = ((result == 0) && (psw.C)) ? 0 : 1; 
+	
+			  break;
+		case TST: 
+			  temp1 = reg_READ(trace,input_var.OOP.Mode,input_var.OOP.Register); 
+			  result = 0-temp1; 
+
+  			  psw.Z = (result == 0) ? 1 : 0;
+			  psw.N = (result < 0) ? 1 : 0; 
+			  
+			  psw.V = 0;
+			  psw.C = 0; 
+
+			  break;
+
+		case NEG: 
+			  temp1 = reg_READ(trace,input_var.OOP.Mode,input_var.OOP.Register); 
+			  result = -temp1; 
+			  reg_WRITE(trace,input_var.OOP.Mode,input_var.OOP.Register,result); 
+
+  			  psw.Z = (result == 0) ? 1 : 0;
+			  psw.N = (result < 0) ? 1 : 0; 
+			  psw.V = (temp1 == 0100000) ? 1 : 0; 
+			  psw.C = (result == 0) ? 0 : 1; 
+
+			  break;
+		case COM: 
+			  temp1 = reg_READ(trace,input_var.OOP.Mode,input_var.OOP.Register); 
+			  result = ~temp1; 
+			  reg_WRITE(trace,input_var.OOP.Mode,input_var.OOP.Register,result); 
+
+  			  psw.Z = (result == 0) ? 1 : 0;
+			  psw.N = (result < 0) ? 1 : 0; 
+			  psw.V = 0; 
+			  psw.C = 1; 
+
+			  break;
+		case ROR: 
+			  temp1 = reg_READ(trace,input_var.OOP.Mode,input_var.OOP.Register); 
+			  temp2 = (temp1 >> 1) | (psw.C << 15) ;
+			  psw.C = (temp1 & 0000001); 
+			  reg_WRITE(trace,input_var.OOP.Mode,input_var.OOP.Register,result); 
+
+  			  psw.Z = (result == 0) ? 1 : 0;
+			  psw.N = (result < 0) ? 1 : 0; 
+			  psw.V = psw.N ^ psw.C;
+			  break;
+		case ROL: 
+			  temp1 = reg_READ(trace,input_var.OOP.Mode,input_var.OOP.Register); 
+			  temp2 = (temp1 << 1) | (psw.C) ;
+			  psw.C = (temp1 & 0100000); 
+			  reg_WRITE(trace,input_var.OOP.Mode,input_var.OOP.Register,result); 
+
+  			  psw.Z = (result == 0) ? 1 : 0;
+			  psw.N = (result < 0) ? 1 : 0; 
+			  psw.V = psw.N ^ psw.C; 
+			  break;
+		case ASR: 
+			  temp1 = reg_READ(trace,input_var.OOP.Mode,input_var.OOP.Register); 
+			  result = (temp1 & 0100000) | (temp1 >> 1);
+			  reg_WRITE(trace,input_var.OOP.Mode,input_var.OOP.Register,result); 
+
+  			  psw.Z = (result == 0) ? 1 : 0;
+			  psw.N = (result < 0) ? 1 : 0;  
+			  psw.C = (temp1 & 0000001); 
+			  psw.V = psw.N ^ psw.C; 
+			  break;
+		case ASL: 
+			  temp1 = reg_READ(trace,input_var.OOP.Mode,input_var.OOP.Register); 
+			  result = (temp1 & 0000001) | (temp1 << 1); 
+			  reg_WRITE(trace,input_var.OOP.Mode,input_var.OOP.Register,result); 
+
+  			  psw.Z = (result == 0) ? 1 : 0;
+			  psw.N = (result < 0) ? 1 : 0; 
+			  psw.C = (temp1 & 0100000);
+			  psw.V = psw.N ^ psw.C; 
+			
+			  break;
+		case SWAB:
+			  temp1 = reg_READ(trace,input_var.OOP.Mode,input_var.OOP.Register); 
+			  result = ((temp1 && 0xff00) >> 8) | ((temp1 && 0x00ff) << 8);			  
+			  reg_WRITE(trace,input_var.OOP.Mode,input_var.OOP.Register,result); 
+
+  			  psw.Z = ((result & 0x00ff) == 0 ) ? 1 : 0;
+			  psw.N = ((result & 0x0080) >> 7) ? 1 : 0; 
+			  psw.V = 0; 
+			  psw.C = 0;
+			  break;
+		case SXT:
+			  temp1 = reg_READ(trace,input_var.OOP.Mode,input_var.OOP.Register); 
+			  result = (psw.N == 1) ? 0177777 : 0000000; 
+			  reg_WRITE(trace,input_var.OOP.Mode,input_var.OOP.Register,result); 
+
+  			  psw.Z = (result == 0) ? 1 : 0;
+			  psw.N = (result < 0) ? 1 : 0; 
+			  psw.V = 0; 
+			  psw.C = 1; 
+
+
+			  break;
 	}
 }
 
@@ -375,22 +620,22 @@ void func_conditionalbranch(FILE *trace,instruction_set input_var){
 
 	if(input_var.BRANCH.x){
 		switch(input_var.BRANCH.Opcode){
-			case BPL :  if(N == 0){
+			case BPL :  if(psw.N == 0){
 							Reg[PC] = result;
 						}
 						break;
 						
-			case BMI :  if(N == 1){
+			case BMI :  if(psw.N == 1){
 							Reg[PC] = result; 
 						}
 						break;
 						
-			case BVC : if(V == 0){
+			case BVC : if(psw.V == 0){
 							Reg[PC] = result; 
 					   }
 						break; 
 						
-			case BVS : if(V == 1){
+			case BVS : if(psw.V == 1){
 							Reg[PC] = result; 
 					   } 
 						break;
@@ -400,7 +645,7 @@ void func_conditionalbranch(FILE *trace,instruction_set input_var){
 					   }
 						break; 
 			*/			
-			case BCC : if(C == 0){
+			case BCC : if(psw.C == 0){
 							Reg[PC] = result; 
 					   }
 						break;
@@ -410,17 +655,17 @@ void func_conditionalbranch(FILE *trace,instruction_set input_var){
 					   }
 						break;
 			*/			
-			case BCS : if(C == 1){
+			case BCS : if(psw.C == 1){
 							Reg[PC] = result; 
 					   }
 						break; 
 						
-			case BHI : if((C | Z) == 0){
+			case BHI : if((psw.C | psw.Z) == 0){
 							Reg[PC] = result; 
 					   }
 						break;
 						
-			case BLOS: if((C | Z) == 1){
+			case BLOS: if((psw.C | psw.Z) == 1){
 							Reg[PC] = result; 
 					   }
 						break; 
@@ -429,15 +674,16 @@ void func_conditionalbranch(FILE *trace,instruction_set input_var){
 	}
 	else{
 		switch(input_var.BRANCH.Opcode){
-			case BR :   Reg[PC] = result; 
+			case BR :   Reg[PC] = result;
+				    printf("BR Branch\n");
 						break;  
 						
-			case BNE:   if(Z == 0){
+			case BNE:   if(psw.Z == 0){
 							Reg[PC] = result; 					
 						}
 						break;
 						
-			case BEQ:   if(Z == 1){
+			case BEQ:   if(psw.Z == 1){
 							Reg[PC] = result; 
 						}
 						break; 
@@ -447,19 +693,20 @@ void func_conditionalbranch(FILE *trace,instruction_set input_var){
 						}
 						break; 
 			*/			
-			case BLT:   if( N ^ Z == 1){
+			case BLT:   if( psw.N ^ psw.Z == 1){
 							Reg[PC] = result; 
 						}
 						break; 
 						
-			case BGT: 	if( (Z | (N ^ V)) == 0){
+			case BGT: 	if( (psw.Z | (psw.N ^ psw.V)) == 0){
 							Reg[PC] = result;
 						}
 						break;
 						
-			case BLE: 	if( (Z | (N ^ V)) == 1){
+			case BLE: 	if( (psw.Z | (psw.N ^ psw.V)) == 1){
 							Reg[PC] = result;					
 						}
+					printf("BLE Branch\n");
 						break; 
 		}
 	}
