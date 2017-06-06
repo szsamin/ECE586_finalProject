@@ -260,22 +260,20 @@ unsigned short Effective_Address(FILE *trace, unsigned short mode, unsigned shor
 
 			case RLDIR  : printf("Relative Direct addressing\n");
 				      x = read_mem(trace,DATA_READ,Reg[PC]);
-				      x = read_mem(trace,DATA_READ,x); 
 				      Reg[PC] = Reg[PC] + 2;	
-				      return x + read_mem(trace,DATA_READ,Reg[PC]); 	
+				      return x + Reg[PC]; 	
  				      break; 		
 
 			case ABSDR  : printf("Absolute Direct \n"); 
-				      x= read_mem(trace,DATA_READ,Reg[PC]);
-				      return read_mem(trace, DATA_READ,x); 
-			 	      Reg[PC] = x + 2;  
+				      x = read_mem(trace,DATA_READ,Reg[PC]);
+			 	      Reg[PC] = Reg[PC] + 2;
+					  return x; 
 				      break;
 
 			case RLINDIR: printf("Relative Indirect addressing\n");
 				      x = read_mem(trace,DATA_READ,Reg[PC]);
-				      x = read_mem(trace,DATA_READ,x);
 				      Reg[PC] = Reg[PC] + 2; 
-				      unsigned short y = x + read_mem(trace,DATA_READ,Reg[PC]);
+				      unsigned short y = x + Reg[PC];
 				      return read_mem(trace,DATA_READ,y);
 				      break;
 		}
