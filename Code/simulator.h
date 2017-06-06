@@ -138,24 +138,39 @@ struct double_operand{
 }double_operand;
 
 struct single_operand{            
-	unsigned short Opcode:10;  
-	unsigned short Mode:3;
+	//unsigned short Opcode:10;  
+	//unsigned short Mode:3;
+	//unsigned short Register:3;
+	
 	unsigned short Register:3;
+	unsigned short Mode:3;
+	unsigned short Opcode:10; 
 }single_operand;
 
 struct onehalf_operand{
-	unsigned short Remainder:4;
-	unsigned short Opcode:3;
-	unsigned short Register:3;
-	unsigned short Mode:3;
+	//unsigned short Remainder:4;
+	//unsigned short Opcode:3;
+	//unsigned short Register:3;
+	//unsigned short Mode:3;
+	//unsigned short Source:3;
+
 	unsigned short Source:3;
+	unsigned short Mode:3;
+	unsigned short Register:3;
+	unsigned short Opcode:3;
+	unsigned short Remainder:4; 
 } onehalf_operand; 
 
 struct conditional{
-	unsigned short x:1;
-	unsigned short Remainder:4; 
+	//unsigned short x:1;
+	//unsigned short Remainder:4; 
+	//unsigned short Opcode:3;
+	//unsigned short Offset:8;
+
+	signed short Offset:8;
 	unsigned short Opcode:3;
-	unsigned short Offset:8;
+	unsigned short Remainder:4;
+	unsigned short x:1; 
 }conditional;
 
 /* PSW Structuree */ 

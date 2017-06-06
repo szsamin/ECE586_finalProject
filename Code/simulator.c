@@ -12,7 +12,10 @@
 // Global data type initializations
 char dataStr[MEM];  				
 unsigned char mem[MEM]; 		// Memory size declaration 
-unsigned short int Reg [8]; 		// Register size declaration 
+unsigned short Reg [8]; 		// Register size declaration 
+
+unsigned short current_EA;		// Current global EA available to all functions for manipulation  
+
 
 int main(int argc,int argv){
 	  /* initial step read file */ 
@@ -22,7 +25,7 @@ int main(int argc,int argv){
 	  int done = 0;
 
 	  /* Initial Starting address */ 
-          Reg[PC] = 8; 
+          Reg[PC] = 0; 
 	  /* Add a command line if else - if the user does not specify a starting address, the starting address defaults to 0 */ 
 	  
 	  instruction_set  fetched_instruction; 
@@ -44,7 +47,9 @@ int main(int argc,int argv){
  
 	   	// Fetch Instruction  
 	  	fetched_instruction = (union instruction_set)read_mem(trace,INSTRUCTION_FETCH,Reg[PC]); 
-		Reg[PC] += 2; 	  	
+		Reg[PC] = Reg[PC] +  2; 	  	
+		instruction_counter++;
+		printf("INSTRUCTION COUNTER = %d\n",instruction_counter);  	
 		printf("Instruction Fetched !\n");
 		// Decode Instruction  		
                /* Pseudo code */
@@ -141,7 +146,12 @@ int main(int argc,int argv){
 			
 		}
 		// Execute Instruction 
-		print_REG();  
+		print_REG(); 
+		
+		printf("OLD - %o\n",read_mem(trace,DATA_READ,0)); 
+		printf("NEW - %o\n",read_mem(trace,DATA_READ,2)); 
+		printf("FIBO - %o\n",read_mem(trace,DATA_READ,4)); 
+		printf("N - %o\n",read_mem(trace,DATA_READ,6)); 
 	 
 		
 	
@@ -202,7 +212,7 @@ void display(){
 unsigned short read_mem(FILE *trace,unsigned short type, unsigned short address){
 		
 		unsigned short mem_value; 
-		printf("Address being read from - %o\n",address); 		
+		printf("Address being read from - %d\n",address); 		
 
 		/* Check for odd memory address request - Address allignment check */
 		if((address & 0x0001)){
@@ -220,7 +230,7 @@ unsigned short read_mem(FILE *trace,unsigned short type, unsigned short address)
 			mem_value = (mem[address+1] << 8) | mem[address];	  
 		} 
 		/* Trace file generation */
-		fprintf(trace,"%d %o\n",type,address); 
+		fprintf(trace,"%d %d\n",type,address); 
 		printf("DONE READING - %o\n",mem_value); 
 		return mem_value; 
 		
@@ -259,8 +269,11 @@ unsigned short Effective_Address(FILE *trace, unsigned short mode, unsigned shor
 				      break;
 
 			case RLDIR  : printf("Relative Direct addressing\n");
+				      printf("REG[PC] before read_mem - %o\n",Reg[PC]); 
 				      x = read_mem(trace,DATA_READ,Reg[PC]);
-				      Reg[PC] = Reg[PC] + 2;	
+				      Reg[PC] = Reg[PC] + 2;
+				      printf("Value of X - %o\n",x); 
+				      printf("Value of X + Reg[PC] - %o\n",x + Reg[PC]); 	
 				      return x + Reg[PC]; 	
  				      break; 		
 
@@ -328,11 +341,11 @@ signed short reg_READ(FILE *trace, unsigned short mode, unsigned short source) {
 	printf("READING FROM REG\n"); 
 	switch(mode) {
 		case REG			: temp =  Reg[source];
-						    
+						  printf("Value stored in temp : %o\n",Reg[source]);  
 						  break;
 	
 		default 			: temp = Effective_Address(trace, mode, source);
-						  
+						  current_EA = temp; 			  
 						  temp =  read_mem(trace,DATA_READ,temp); 
 					 	  break;									  
 	}
@@ -367,6 +380,7 @@ void func_doubleoperand(FILE *trace, instruction_set input_var){
 	signed short temp1;	
 	signed short temp2;	
 	
+	unsigned short Mode_D = input_var.TOP.Mode_D; 	
 	switch(input_var.TOP.Opcode){
 		case MOV: 
 			  printf("MOV INSTRUCTION\n");  
@@ -388,8 +402,8 @@ void func_doubleoperand(FILE *trace, instruction_set input_var){
 			  printf("CMP Instruction\n");		
 			  temp1 = reg_READ(trace,input_var.TOP.Mode_S,input_var.TOP.Source);
 			  temp2 = reg_READ(trace,input_var.TOP.Mode_D,input_var.TOP.Destination); 
-			  result = temp1 + ~temp2 + 1;
-					
+			  result = temp1 - temp2;
+		          printf("RESULT FOR CMP = %d\n",result); 			
 			  if(result == 0){  		   
 			  	psw.Z = 1; 		
 			  }else{psw.Z = 0;} 		
@@ -398,9 +412,9 @@ void func_doubleoperand(FILE *trace, instruction_set input_var){
 				psw.N = 1;  		  /* not sure yet about sign overflow */ 
 			  }else{psw.N = 0;} 
  
-			  psw.C = !((result & 020000) >> 15); 
+			  psw.C = !((result & 0200000) >> 16); 
 			  /* Check for overflow bit - if source MSB XOR destination MSB is true, also negate of destination MSB XOR result MSB is true, then overflow must be true */ 
-		          psw.V = (((temp1 & 0200000)>> 15) ^ (( temp2 & 020000 >> 15))) && !(((temp2 & 020000) >> 15) && (result & 020000) >> 15); 	
+		          psw.V = (((temp1 & 0100000)>> 15) ^ ((( temp2 & 0100000) >> 15))) && !(((temp2 & 0100000) >> 15) ^ ((result & 0100000) >> 15)); 	
 			
 
 			  break;
@@ -428,7 +442,10 @@ void func_doubleoperand(FILE *trace, instruction_set input_var){
 			  temp1 = ~reg_READ(trace,input_var.TOP.Mode_S,input_var.TOP.Source);
 			  temp2 = reg_READ(trace,input_var.TOP.Mode_D,input_var.TOP.Destination);
 			  result = temp1 & temp2; 
-			  reg_WRITE(trace,input_var.TOP.Mode_D, input_var.TOP.Destination, result);
+
+			  /* only for instruction that reuse destination */
+			  if(Mode_D != 0){write_mem(trace,DATA_WRITE,current_EA,result);}
+			  else{reg_WRITE(trace,input_var.TOP.Mode_D, input_var.TOP.Destination, result);}
 					
 			  if(result == 0){
 			  	psw.Z = 1; 
@@ -447,7 +464,9 @@ void func_doubleoperand(FILE *trace, instruction_set input_var){
 			  temp1 = ~reg_READ(trace,input_var.TOP.Mode_S,input_var.TOP.Source);
 			  temp2 = reg_READ(trace,input_var.TOP.Mode_D,input_var.TOP.Destination);
 			  result = temp1 | temp2; 
-			  reg_WRITE(trace,input_var.TOP.Mode_D, input_var.TOP.Destination, result);
+			  /* only for instruction that reuse destination */
+			  if(Mode_D != 0){write_mem(trace,DATA_WRITE,current_EA,result);}
+			  else{reg_WRITE(trace,input_var.TOP.Mode_D, input_var.TOP.Destination, result);}
 			  
 			  if(result == 0){
 			  	psw.Z = 1; 
@@ -465,8 +484,10 @@ void func_doubleoperand(FILE *trace, instruction_set input_var){
 			  	printf("ADD Instruction\n");				
 				temp1 = reg_READ(trace,input_var.TOP.Mode_S,input_var.TOP.Source);
 				temp2 = reg_READ(trace,input_var.TOP.Mode_D,input_var.TOP.Destination);
-				result = temp1 + temp2; 
-				reg_WRITE(trace,input_var.TOP.Mode_D, input_var.TOP.Destination, result);
+				result = temp1 + temp2;
+				/* only for instruction that reuse destination */				 
+			 	 if(Mode_D != 0){write_mem(trace,DATA_WRITE,current_EA,result);}
+			 	 else{reg_WRITE(trace,input_var.TOP.Mode_D, input_var.TOP.Destination, result);}
 			        if(result == 0){
 			              psw.Z = 1; 
 				}else{psw.Z = 0;}
@@ -474,9 +495,9 @@ void func_doubleoperand(FILE *trace, instruction_set input_var){
 			        if(result < 0){
 				      psw.N = 1; 
 			        }else{psw.N = 0;}
-			 	 psw.C = ((result & 020000) >> 15); 
+			 	 psw.C = ((result & 0200000) >> 16); 
 			 	 /* Check for overflow bit - if the negate of source MSB XOR destination MSB is true, also destination MSB XOR result MSB is true, then overflow must be true */ 
-		          	psw.V = !(((temp1 & 0200000)>> 15) ^ (( temp2 & 020000 >> 15))) && (((temp2 & 020000) >> 15) && (result & 020000) >> 15);
+		          	psw.V = !(((temp1 & 0100000)>> 15) ^ (( temp2 & 0100000 >> 15))) && (((temp2 & 0100000) >> 15) && (result & 0100000) >> 15);
 				break; 	
 				}
 			else{	
@@ -484,8 +505,13 @@ void func_doubleoperand(FILE *trace, instruction_set input_var){
 				printf("SUB Instruction\n");
 				temp1 = reg_READ(trace,input_var.TOP.Mode_S,input_var.TOP.Source);
 				temp2 = reg_READ(trace,input_var.TOP.Mode_D,input_var.TOP.Destination);
-				result = temp2 + ~temp1 + 1; 
-				reg_WRITE(trace,input_var.TOP.Mode_D, input_var.TOP.Destination, result);
+				result = temp2 - temp1; 
+				
+				 
+			  	/* only for instruction that reuse destination */
+			  	if(Mode_D != 0){write_mem(trace,DATA_WRITE,current_EA,result);}
+			  	else{reg_WRITE(trace,input_var.TOP.Mode_D, input_var.TOP.Destination, result);}
+				
 			  	if(result == 0){
 			  	psw.Z = 1; 
 			 	 }else{psw.Z = 0;}
@@ -496,9 +522,9 @@ void func_doubleoperand(FILE *trace, instruction_set input_var){
 
 			 	 psw.V = 0; 
 				
-			  	psw.C = !((result & 020000) >> 15); 
+			  	psw.C = !((result & 0200000) >> 16); 
 			  	/* Check for overflow bit - if source MSB XOR destination MSB is true, also negate of destination MSB XOR result MSB is true, then overflow must be true */ 
-		         	 psw.V = (((temp1 & 0200000)>> 15) ^ (( temp2 & 020000 >> 15))) && !(((temp2 & 020000) >> 15) && (result & 020000) >> 15); 	
+		         	 psw.V = (((temp1 & 0100000)>> 15) ^ (( temp2 & 0100000 >> 15))) && !(((temp2 & 0100000) >> 15) && (result & 0100000) >> 15); 	
 				} 
 				break; 
 	}
@@ -509,12 +535,12 @@ void func_singleoperand(FILE *trace,instruction_set input_var){
 	signed short temp1; 
 	signed short temp2; 	
 
-
+	unsigned short Mode = input_var.OOP.Mode; 
 	switch(input_var.OOP.Opcode){
 		
 		case CLR:
 			  printf("CLR Instruction\n");		
-				reg_WRITE(trace,input_var.OOP.Mode,input_var.OOP.Register,0); 
+			  reg_WRITE(trace,input_var.OOP.Mode,input_var.OOP.Register,0); 
 			  psw.Z = 1;
 			  psw.N = 0;
 			  psw.C = 0;
@@ -526,7 +552,12 @@ void func_singleoperand(FILE *trace,instruction_set input_var){
 			  printf("INC Instruction\n");
 			  temp1 = reg_READ(trace,input_var.OOP.Mode,input_var.OOP.Register); 
 			  result = temp1 + 1; 
-			  reg_WRITE(trace,input_var.OOP.Mode,input_var.OOP.Register,result); 
+			  
+			  /* only for instruction that reuse destination */
+			  if(Mode != 0){write_mem(trace,DATA_WRITE,current_EA,result);}
+			  else{reg_WRITE(trace,input_var.OOP.Mode, input_var.OOP.Register, result);}
+			  write_mem(trace,DATA_WRITE,current_EA,result); 
+			   
 
   			  psw.Z = (result == 0) ? 1 : 0;
 			  psw.N = (result < 0) ? 1 : 0; 
@@ -538,7 +569,9 @@ void func_singleoperand(FILE *trace,instruction_set input_var){
 			  printf("DEC Instruction\n");
 			  temp1 = reg_READ(trace,input_var.OOP.Mode,input_var.OOP.Register); 
 			  result = temp1 - 1; 
-			  reg_WRITE(trace,input_var.OOP.Mode,input_var.OOP.Register,result); 
+			  /* only for instruction that reuse destination */
+			  if(Mode != 0){write_mem(trace,DATA_WRITE,current_EA,result);}
+			  else{reg_WRITE(trace,input_var.OOP.Mode, input_var.OOP.Register, result);} 
 			  printf("DEC Instruction"); 
   			  psw.Z = (result == 0) ? 1 : 0;
 			  psw.N = (result < 0) ? 1 : 0; 
@@ -549,7 +582,9 @@ void func_singleoperand(FILE *trace,instruction_set input_var){
 			  printf("ADC Instruction\n");
 			  temp1 = reg_READ(trace,input_var.OOP.Mode,input_var.OOP.Register); 
 			  result = temp1 + psw.C; 
-			  reg_WRITE(trace,input_var.OOP.Mode,input_var.OOP.Register,result); 
+			  /* only for instruction that reuse destination */
+			  if(Mode != 0){write_mem(trace,DATA_WRITE,current_EA,result);}
+			  else{reg_WRITE(trace,input_var.OOP.Mode, input_var.OOP.Register, result);} 
 
   			  psw.Z = (result == 0) ? 1 : 0;
 			  psw.N = (result < 0) ? 1 : 0; 
@@ -562,7 +597,9 @@ void func_singleoperand(FILE *trace,instruction_set input_var){
 			  printf("SBC Instruction\n");
 			  temp1 = reg_READ(trace,input_var.OOP.Mode,input_var.OOP.Register); 
 			  result = temp1 - psw.C; 
-			  reg_WRITE(trace,input_var.OOP.Mode,input_var.OOP.Register,result); 
+			  /* only for instruction that reuse destination */
+			  if(Mode != 0){write_mem(trace,DATA_WRITE,current_EA,result);}
+			  else{reg_WRITE(trace,input_var.OOP.Mode, input_var.OOP.Register, result);}
 
   			  psw.Z = (result == 0) ? 1 : 0;
 			  psw.N = (result < 0) ? 1 : 0; 
@@ -587,7 +624,10 @@ void func_singleoperand(FILE *trace,instruction_set input_var){
 			  printf("NEG Instruction\n");
 			  temp1 = reg_READ(trace,input_var.OOP.Mode,input_var.OOP.Register); 
 			  result = -temp1; 
-			  reg_WRITE(trace,input_var.OOP.Mode,input_var.OOP.Register,result); 
+			  /* only for instruction that reuse destination */
+			  if(Mode != 0){write_mem(trace,DATA_WRITE,current_EA,result);}
+			  else{reg_WRITE(trace,input_var.OOP.Mode, input_var.OOP.Register, result);}
+			  
 
   			  psw.Z = (result == 0) ? 1 : 0;
 			  psw.N = (result < 0) ? 1 : 0; 
@@ -599,9 +639,11 @@ void func_singleoperand(FILE *trace,instruction_set input_var){
 			  printf("COM Instruction\n");
 			  temp1 = reg_READ(trace,input_var.OOP.Mode,input_var.OOP.Register); 
 			  result = ~temp1; 
-			  reg_WRITE(trace,input_var.OOP.Mode,input_var.OOP.Register,result); 
-
-  			  psw.Z = (result == 0) ? 1 : 0;
+			  /* only for instruction that reuse destination */
+			  if(Mode != 0){write_mem(trace,DATA_WRITE,current_EA,result);}
+			  else{reg_WRITE(trace,input_var.OOP.Mode, input_var.OOP.Register, result);}
+			   
+			  psw.Z = (result == 0) ? 1 : 0;
 			  psw.N = (result < 0) ? 1 : 0; 
 			  psw.V = 0; 
 			  psw.C = 1; 
@@ -612,7 +654,9 @@ void func_singleoperand(FILE *trace,instruction_set input_var){
 			  temp1 = reg_READ(trace,input_var.OOP.Mode,input_var.OOP.Register); 
 			  temp2 = (temp1 >> 1) | (psw.C << 15) ;
 			  psw.C = (temp1 & 0000001); 
-			  reg_WRITE(trace,input_var.OOP.Mode,input_var.OOP.Register,result); 
+			  /* only for instruction that reuse destination */
+			  if(Mode != 0){write_mem(trace,DATA_WRITE,current_EA,result);}
+			  else{reg_WRITE(trace,input_var.OOP.Mode, input_var.OOP.Register, result);}
 
   			  psw.Z = (result == 0) ? 1 : 0;
 			  psw.N = (result < 0) ? 1 : 0; 
@@ -623,7 +667,11 @@ void func_singleoperand(FILE *trace,instruction_set input_var){
 			  temp1 = reg_READ(trace,input_var.OOP.Mode,input_var.OOP.Register); 
 			  temp2 = (temp1 << 1) | (psw.C) ;
 			  psw.C = (temp1 & 0100000); 
-			  reg_WRITE(trace,input_var.OOP.Mode,input_var.OOP.Register,result); 
+			  /* only for instruction that reuse destination */
+			  if(Mode != 0){write_mem(trace,DATA_WRITE,current_EA,result);}
+			  else{reg_WRITE(trace,input_var.OOP.Mode, input_var.OOP.Register, result);}
+			   
+			   
 
   			  psw.Z = (result == 0) ? 1 : 0;
 			  psw.N = (result < 0) ? 1 : 0; 
@@ -633,7 +681,11 @@ void func_singleoperand(FILE *trace,instruction_set input_var){
 			  printf("ASR Instruction\n");
 			  temp1 = reg_READ(trace,input_var.OOP.Mode,input_var.OOP.Register); 
 			  result = (temp1 & 0100000) | (temp1 >> 1);
-			  reg_WRITE(trace,input_var.OOP.Mode,input_var.OOP.Register,result); 
+			  /* only for instruction that reuse destination */
+			  if(Mode != 0){write_mem(trace,DATA_WRITE,current_EA,result);}
+			  else{reg_WRITE(trace,input_var.OOP.Mode, input_var.OOP.Register, result);}
+		    	  
+			   
 
   			  psw.Z = (result == 0) ? 1 : 0;
 			  psw.N = (result < 0) ? 1 : 0;  
@@ -644,9 +696,11 @@ void func_singleoperand(FILE *trace,instruction_set input_var){
 			  printf("ASL Instruction\n");
 			  temp1 = reg_READ(trace,input_var.OOP.Mode,input_var.OOP.Register); 
 			  result = (temp1 & 0000001) | (temp1 << 1); 
-			  reg_WRITE(trace,input_var.OOP.Mode,input_var.OOP.Register,result); 
-
-  			  psw.Z = (result == 0) ? 1 : 0;
+	  	          /* only for instruction that reuse destination */
+			  if(Mode != 0){write_mem(trace,DATA_WRITE,current_EA,result);}
+			  else{reg_WRITE(trace,input_var.OOP.Mode, input_var.OOP.Register, result);}
+	
+			  psw.Z = (result == 0) ? 1 : 0;
 			  psw.N = (result < 0) ? 1 : 0; 
 			  psw.C = (temp1 & 0100000);
 			  psw.V = psw.N ^ psw.C; 
@@ -656,7 +710,12 @@ void func_singleoperand(FILE *trace,instruction_set input_var){
 			  printf("SWAB Instruction\n");
 			  temp1 = reg_READ(trace,input_var.OOP.Mode,input_var.OOP.Register); 
 			  result = ((temp1 && 0xff00) >> 8) | ((temp1 && 0x00ff) << 8);			  
-			  reg_WRITE(trace,input_var.OOP.Mode,input_var.OOP.Register,result); 
+			  /* only for instruction that reuse destination */
+
+			  if(Mode != 0){write_mem(trace,DATA_WRITE,current_EA,result);}
+			  else{reg_WRITE(trace,input_var.OOP.Mode, input_var.OOP.Register, result);}
+
+
 
   			  psw.Z = ((result & 0x00ff) == 0 ) ? 1 : 0;
 			  psw.N = ((result & 0x0080) >> 7) ? 1 : 0; 
@@ -667,7 +726,12 @@ void func_singleoperand(FILE *trace,instruction_set input_var){
 			  printf("SXT Instruction\n");
 			  temp1 = reg_READ(trace,input_var.OOP.Mode,input_var.OOP.Register); 
 			  result = (psw.N == 1) ? 0177777 : 0000000; 
-			  reg_WRITE(trace,input_var.OOP.Mode,input_var.OOP.Register,result); 
+			  /* only for instruction that reuse destination */
+
+			  if(Mode != 0){write_mem(trace,DATA_WRITE,current_EA,result);}
+			  else{reg_WRITE(trace,input_var.OOP.Mode, input_var.OOP.Register, result);}
+ 
+
 
   			  psw.Z = (result == 0) ? 1 : 0;
 			  psw.N = (result < 0) ? 1 : 0; 
@@ -682,7 +746,8 @@ void func_singleoperand(FILE *trace,instruction_set input_var){
 void func_conditionalbranch(FILE *trace,instruction_set input_var){
 	unsigned short temp;
 	unsigned short result; 
-	temp = read_mem(trace,DATA_READ,Reg[PC]);
+	temp = Reg[PC];
+	printf("Offset = %d\n",input_var.BRANCH.Offset); 
 	result = temp + 2*input_var.BRANCH.Offset; 	
 
 	if(input_var.BRANCH.x){
