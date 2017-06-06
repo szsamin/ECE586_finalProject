@@ -6,12 +6,8 @@
 */ 
 
 // Library Declarations 
-#include "/usr/include/stdlib.h"
-#include "/usr/include/stdio.h"
-#include "/usr/include/string.h"
-#include "/usr/include/unistd.h" 
 #include "../Code/simulator.h" 
-
+#include <stdlib.h>
 
 // Global data type initializations
 char dataStr[MEM];  				
@@ -48,7 +44,8 @@ int main(int argc,int argv){
  
 	   	// Fetch Instruction  
 	  	fetched_instruction = (union instruction_set)read_mem(trace,INSTRUCTION_FETCH,Reg[PC]); 
-	  	printf("Instruction Fetched !\n");
+		Reg[PC] += 2; 	  	
+		printf("Instruction Fetched !\n");
 		// Decode Instruction  		
                /* Pseudo code */
 		/* 
@@ -137,6 +134,8 @@ int main(int argc,int argv){
 				/* If none of the above sets are a match it is a two_operand instructions */ 
 				default:
 					printf("Two Operand Instruction\n");
+					printf("Instruction Fetched - %o\n",fetched_instruction.fetched);
+					printf("B %o, Opcode %o, Mode Source %o, Source %o, Mode Destination %o, Destination %o\n",fetched_instruction.TOP.B,fetched_instruction.TOP.Opcode,fetched_instruction.TOP.Mode_S,fetched_instruction.TOP.Source,fetched_instruction.TOP.Mode_D,fetched_instruction.TOP.Destination);
 					func_doubleoperand(trace,fetched_instruction);  
 			}
 			
@@ -144,9 +143,9 @@ int main(int argc,int argv){
 		// Execute Instruction 
 		print_REG();  
 	 
+		
 	
-		// Increment 
-	        Reg[PC] = Reg[PC] + 2;
+	        
 		   	
 	 }
 
@@ -203,6 +202,7 @@ void display(){
 unsigned short read_mem(FILE *trace,unsigned short type, unsigned short address){
 		
 		unsigned short mem_value; 
+		printf("Address being read from - %o\n",address); 		
 
 		/* Check for odd memory address request - Address allignment check */
 		if((address & 0x0001)){
@@ -221,7 +221,10 @@ unsigned short read_mem(FILE *trace,unsigned short type, unsigned short address)
 		} 
 		/* Trace file generation */
 		fprintf(trace,"%d %o\n",type,address); 
+		printf("DONE READING - %o\n",mem_value); 
 		return mem_value; 
+		
+		 
 }
 
 
@@ -242,43 +245,81 @@ void write_mem(FILE *trace,unsigned short type, unsigned short address, unsigned
 /* Effective Address Calculation */ 
 unsigned short Effective_Address(FILE *trace, unsigned short mode, unsigned short source) {
 	unsigned short x;
+	
+	if(source == PC){ 
+		switch(mode){
+			case IMD    : printf("Immediate Addressing\n"); 
+				      printf("Reg[PC] = %o\n",Reg[PC]);
+				      x = Reg[PC];
+				      Reg[PC] = x + 2;
+				      printf("This shit works\n"); 
+				       
+				      printf("New effective address - %o\n",x); 
+				      return x;
+				      break;
+
+			case RLDIR  : printf("Relative Direct addressing\n");
+				      x = read_mem(trace,DATA_READ,Reg[PC]);
+				      x = read_mem(trace,DATA_READ,x); 
+				      Reg[PC] = Reg[PC] + 2;	
+				      return x + read_mem(trace,DATA_READ,Reg[PC]); 	
+ 				      break; 		
+
+			case ABSDR  : printf("Absolute Direct \n"); 
+				      x= read_mem(trace,DATA_READ,Reg[PC]);
+				      return read_mem(trace, DATA_READ,x); 
+			 	      Reg[PC] = x + 2;  
+				      break;
+
+			case RLINDIR: printf("Relative Indirect addressing\n");
+				      x = read_mem(trace,DATA_READ,Reg[PC]);
+				      x = read_mem(trace,DATA_READ,x);
+				      Reg[PC] = Reg[PC] + 2; 
+				      unsigned short y = x + read_mem(trace,DATA_READ,Reg[PC]);
+				      return read_mem(trace,DATA_READ,y);
+				      break;
+		}
+	}
+	else{
 	switch(mode) {
 		
 		case R_DEF 	    : return Reg[source];
 				      break;
 						 
-		case AUTOINCR       : return Reg[source];
+		case AUTOINCR       :
+				      return Reg[source];
 				      Reg[source] = Reg[source]+2;
 				      break;
 								 
 		case AUTOINC_DEF    : return read_mem( trace,DATA_READ,Reg[source]);
-					          Reg[source] = Reg[source]+2;
-					          break;
+				      Reg[source] = Reg[source]+2;
+				      break;
 									  
 		case AUTODECR       : Reg[source] = Reg[source] - 2;
-					          return Reg[source];
-					          break;
+				      return Reg[source];
+				      break;
 									
 		case AUTODECR_DEF   : Reg[source] = Reg[source] - 2;
-							  return read_mem(trace,DATA_READ,Reg[source]);
-							  break;
+				      return read_mem(trace,DATA_READ,Reg[source]);
+				      break;
 									  
 		case INDEX          : x = read_mem( trace,DATA_READ,Reg[PC]);
-							  Reg[source] = Reg[source] + x;
-							  Reg[PC] = Reg[PC] + 2;
-							  return Reg[source];
-							  break;
+				      Reg[source] = Reg[source] + x;
+				      Reg[PC] = Reg[PC] + 2;
+				      return Reg[source];
+				      break;
 									  
 		case INDEX_DEF      : x = read_mem( trace,DATA_READ,Reg[PC]);
-							  Reg[source] = Reg[source] + x;
-							  Reg[PC] = Reg[PC] + 2;
-   							  return read_mem(trace,DATA_READ, Reg[source]);
-   							  break;
+				      Reg[source] = Reg[source] + x;
+				      Reg[PC] = Reg[PC] + 2;
+   				      return read_mem(trace,DATA_READ, Reg[source]);
+   				      break;
    								  
 		default             : return source; 
-							  printf("Following mode doesn't require Effective Address calculation\n");
-							  break;
+				      printf("Following mode doesn't require Effective Address calculation\n");
+				      break;
 									  
+	}
 	}
 }
 
@@ -286,14 +327,19 @@ unsigned short Effective_Address(FILE *trace, unsigned short mode, unsigned shor
 /* Returns the 16 bit data in the Registers */ 
 signed short reg_READ(FILE *trace, unsigned short mode, unsigned short source) {
 	unsigned short temp;
+	printf("READING FROM REG\n"); 
 	switch(mode) {
-		case REG			: return Reg[source]; 
-							  break;
+		case REG			: temp =  Reg[source];
+						    
+						  break;
 	
 		default 			: temp = Effective_Address(trace, mode, source);
-							  return read_mem(trace,DATA_READ,temp); 
-							  break;									  
+						  
+						  temp =  read_mem(trace,DATA_READ,temp); 
+					 	  break;									  
 	}
+	printf("DONE READING FROM REG\n"); 	
+	return temp; 
 }
 
 /* Register Write Function */ 
@@ -307,7 +353,7 @@ void reg_WRITE(FILE *trace, unsigned short mode, unsigned short destination,sign
 							  break;
 	
 		default 			: temp = Effective_Address(trace, mode, destination);
-							  write_mem(trace,DATA_WRITE,temp,data); 
+						  	  write_mem(trace,DATA_WRITE,temp,data); 
 							  break;									  
 	}
 }
@@ -326,7 +372,7 @@ void func_doubleoperand(FILE *trace, instruction_set input_var){
 	switch(input_var.TOP.Opcode){
 		case MOV: 
 			  printf("MOV INSTRUCTION\n");  
-				result = reg_READ(trace,input_var.TOP.Mode_S,input_var.TOP.Source);
+			  result = reg_READ(trace,input_var.TOP.Mode_S,input_var.TOP.Source);
 			  reg_WRITE(trace,input_var.TOP.Mode_D, input_var.TOP.Destination, result);
 			  if(result == 0){
 			  	psw.Z = 1; 
@@ -336,12 +382,13 @@ void func_doubleoperand(FILE *trace, instruction_set input_var){
 				psw.N = 1; 
 			  }else{psw.N = 0;}
 
-			  psw.V = 0; 
+			  psw.V = 0;
+			  printf("DONE WITH MOV INSTRUCTION -SHOULD FETCH A NEW INSTRUCTION\n"); 
 			  break; 
 				  
 		case CMP:
 			  printf("CMP Instruction\n");		
-				temp1 = reg_READ(trace,input_var.TOP.Mode_S,input_var.TOP.Source);
+			  temp1 = reg_READ(trace,input_var.TOP.Mode_S,input_var.TOP.Source);
 			  temp2 = reg_READ(trace,input_var.TOP.Mode_D,input_var.TOP.Destination); 
 			  result = temp1 + ~temp2 + 1;
 					
@@ -379,7 +426,7 @@ void func_doubleoperand(FILE *trace, instruction_set input_var){
 			  break;
 					
 		case BIC: /* Bit Clear */
-					  printf("BIC Instruction\n");
+			  printf("BIC Instruction\n");
 			  temp1 = ~reg_READ(trace,input_var.TOP.Mode_S,input_var.TOP.Source);
 			  temp2 = reg_READ(trace,input_var.TOP.Mode_D,input_var.TOP.Destination);
 			  result = temp1 & temp2; 
@@ -398,7 +445,7 @@ void func_doubleoperand(FILE *trace, instruction_set input_var){
 			  break;
 					
 		case BIS: /* Bit set,a.k.a logical OR */
-					  printf("BIS Instruction\n");
+			  printf("BIS Instruction\n");
 			  temp1 = ~reg_READ(trace,input_var.TOP.Mode_S,input_var.TOP.Source);
 			  temp2 = reg_READ(trace,input_var.TOP.Mode_D,input_var.TOP.Destination);
 			  result = temp1 | temp2; 
@@ -417,7 +464,7 @@ void func_doubleoperand(FILE *trace, instruction_set input_var){
 		
 		case ADDSUB:   /* Add */
 		  	if(input_var.TOP.B == 0){
-			  printf("ADD Instruction\n");				
+			  	printf("ADD Instruction\n");				
 				temp1 = reg_READ(trace,input_var.TOP.Mode_S,input_var.TOP.Source);
 				temp2 = reg_READ(trace,input_var.TOP.Mode_D,input_var.TOP.Destination);
 				result = temp1 + temp2; 
@@ -478,7 +525,7 @@ void func_singleoperand(FILE *trace,instruction_set input_var){
 			  break;
 
 		case INC: 
-					  printf("INC Instruction\n");
+			  printf("INC Instruction\n");
 			  temp1 = reg_READ(trace,input_var.OOP.Mode,input_var.OOP.Register); 
 			  result = temp1 + 1; 
 			  reg_WRITE(trace,input_var.OOP.Mode,input_var.OOP.Register,result); 
@@ -490,7 +537,7 @@ void func_singleoperand(FILE *trace,instruction_set input_var){
 			  break;
 
 		case DEC: 
-					  printf("DEC Instruction\n");
+			  printf("DEC Instruction\n");
 			  temp1 = reg_READ(trace,input_var.OOP.Mode,input_var.OOP.Register); 
 			  result = temp1 - 1; 
 			  reg_WRITE(trace,input_var.OOP.Mode,input_var.OOP.Register,result); 
@@ -501,7 +548,7 @@ void func_singleoperand(FILE *trace,instruction_set input_var){
 	
 			  break;
 		case ADC: 
-					  printf("ADC Instruction\n");
+			  printf("ADC Instruction\n");
 			  temp1 = reg_READ(trace,input_var.OOP.Mode,input_var.OOP.Register); 
 			  result = temp1 + psw.C; 
 			  reg_WRITE(trace,input_var.OOP.Mode,input_var.OOP.Register,result); 
@@ -514,7 +561,7 @@ void func_singleoperand(FILE *trace,instruction_set input_var){
 			  break;
 
 		case SBC: 
-					  printf("SBC Instruction\n");
+			  printf("SBC Instruction\n");
 			  temp1 = reg_READ(trace,input_var.OOP.Mode,input_var.OOP.Register); 
 			  result = temp1 - psw.C; 
 			  reg_WRITE(trace,input_var.OOP.Mode,input_var.OOP.Register,result); 
@@ -526,7 +573,7 @@ void func_singleoperand(FILE *trace,instruction_set input_var){
 	
 			  break;
 		case TST: 
-					  printf("TST Instruction\n");
+			  printf("TST Instruction\n");
 			  temp1 = reg_READ(trace,input_var.OOP.Mode,input_var.OOP.Register); 
 			  result = 0-temp1; 
 
@@ -539,7 +586,7 @@ void func_singleoperand(FILE *trace,instruction_set input_var){
 			  break;
 
 		case NEG: 
-					  printf("NEG Instruction\n");
+			  printf("NEG Instruction\n");
 			  temp1 = reg_READ(trace,input_var.OOP.Mode,input_var.OOP.Register); 
 			  result = -temp1; 
 			  reg_WRITE(trace,input_var.OOP.Mode,input_var.OOP.Register,result); 
@@ -551,7 +598,7 @@ void func_singleoperand(FILE *trace,instruction_set input_var){
 
 			  break;
 		case COM: 
-					  printf("COM Instruction\n");
+			  printf("COM Instruction\n");
 			  temp1 = reg_READ(trace,input_var.OOP.Mode,input_var.OOP.Register); 
 			  result = ~temp1; 
 			  reg_WRITE(trace,input_var.OOP.Mode,input_var.OOP.Register,result); 
@@ -563,7 +610,7 @@ void func_singleoperand(FILE *trace,instruction_set input_var){
 
 			  break;
 		case ROR: 
-					  printf("ROR Instruction\n");
+			  printf("ROR Instruction\n");
 			  temp1 = reg_READ(trace,input_var.OOP.Mode,input_var.OOP.Register); 
 			  temp2 = (temp1 >> 1) | (psw.C << 15) ;
 			  psw.C = (temp1 & 0000001); 
@@ -574,7 +621,7 @@ void func_singleoperand(FILE *trace,instruction_set input_var){
 			  psw.V = psw.N ^ psw.C;
 			  break;
 		case ROL: 
-					  printf("ROL Instruction\n");
+			  printf("ROL Instruction\n");
 			  temp1 = reg_READ(trace,input_var.OOP.Mode,input_var.OOP.Register); 
 			  temp2 = (temp1 << 1) | (psw.C) ;
 			  psw.C = (temp1 & 0100000); 
@@ -585,7 +632,7 @@ void func_singleoperand(FILE *trace,instruction_set input_var){
 			  psw.V = psw.N ^ psw.C; 
 			  break;
 		case ASR: 
-					  printf("ASR Instruction\n");
+			  printf("ASR Instruction\n");
 			  temp1 = reg_READ(trace,input_var.OOP.Mode,input_var.OOP.Register); 
 			  result = (temp1 & 0100000) | (temp1 >> 1);
 			  reg_WRITE(trace,input_var.OOP.Mode,input_var.OOP.Register,result); 
@@ -596,7 +643,7 @@ void func_singleoperand(FILE *trace,instruction_set input_var){
 			  psw.V = psw.N ^ psw.C; 
 			  break;
 		case ASL: 
-					  printf("ASL Instruction\n");
+			  printf("ASL Instruction\n");
 			  temp1 = reg_READ(trace,input_var.OOP.Mode,input_var.OOP.Register); 
 			  result = (temp1 & 0000001) | (temp1 << 1); 
 			  reg_WRITE(trace,input_var.OOP.Mode,input_var.OOP.Register,result); 
@@ -608,7 +655,7 @@ void func_singleoperand(FILE *trace,instruction_set input_var){
 			
 			  break;
 		case SWAB:
-					  printf("SWAB Instruction\n");
+			  printf("SWAB Instruction\n");
 			  temp1 = reg_READ(trace,input_var.OOP.Mode,input_var.OOP.Register); 
 			  result = ((temp1 && 0xff00) >> 8) | ((temp1 && 0x00ff) << 8);			  
 			  reg_WRITE(trace,input_var.OOP.Mode,input_var.OOP.Register,result); 
@@ -619,7 +666,7 @@ void func_singleoperand(FILE *trace,instruction_set input_var){
 			  psw.C = 0;
 			  break;
 		case SXT:
-					  printf("SXT Instruction\n");
+			  printf("SXT Instruction\n");
 			  temp1 = reg_READ(trace,input_var.OOP.Mode,input_var.OOP.Register); 
 			  result = (psw.N == 1) ? 0177777 : 0000000; 
 			  reg_WRITE(trace,input_var.OOP.Mode,input_var.OOP.Register,result); 
@@ -643,24 +690,21 @@ void func_conditionalbranch(FILE *trace,instruction_set input_var){
 	if(input_var.BRANCH.x){
 		switch(input_var.BRANCH.Opcode){
 			case BPL :  if(psw.N == 0){
-							Reg[PC] = result;
-						}
-						break;
+					Reg[PC] = result;}
+				    break;
 						
 			case BMI :  if(psw.N == 1){
-							Reg[PC] = result; 
-						}
-						break;
+					Reg[PC] = result; 
+					}
+				    break;
 						
 			case BVC : if(psw.V == 0){
-							Reg[PC] = result; 
-					   }
-						break; 
+					Reg[PC] = result;}
+				   break; 
 						
 			case BVS : if(psw.V == 1){
-							Reg[PC] = result; 
-					   } 
-						break;
+					Reg[PC] = result;} 
+				   break;
 			/*				
 			case BHIS: if(C == 0){
 							Reg[PC] = result; 
@@ -668,9 +712,8 @@ void func_conditionalbranch(FILE *trace,instruction_set input_var){
 						break; 
 			*/			
 			case BCC : if(psw.C == 0){
-							Reg[PC] = result; 
-					   }
-						break;
+				        Reg[PC] = result;}
+				   break;
 			/*			
 			case BLO : if(C == 1){
 							Reg[PC] = result; 
@@ -678,19 +721,16 @@ void func_conditionalbranch(FILE *trace,instruction_set input_var){
 						break;
 			*/			
 			case BCS : if(psw.C == 1){
-							Reg[PC] = result; 
-					   }
-						break; 
+					Reg[PC] = result;}
+				   break; 
 						
 			case BHI : if((psw.C | psw.Z) == 0){
-							Reg[PC] = result; 
-					   }
-						break;
+					Reg[PC] = result;}
+				   break;
 						
 			case BLOS: if((psw.C | psw.Z) == 1){
-							Reg[PC] = result; 
-					   }
-						break; 
+					Reg[PC] = result;}
+				   break; 
 						
 		}
 	}
@@ -698,17 +738,15 @@ void func_conditionalbranch(FILE *trace,instruction_set input_var){
 		switch(input_var.BRANCH.Opcode){
 			case BR :   Reg[PC] = result;
 				    printf("BR Branch\n");
-						break;  
+	               		    break;  
 						
 			case BNE:   if(psw.Z == 0){
-							Reg[PC] = result; 					
-						}
-						break;
+					Reg[PC] = result;}
+				    break;
 						
 			case BEQ:   if(psw.Z == 1){
-							Reg[PC] = result; 
-						}
-						break; 
+					Reg[PC] = result;}
+				    break; 
 			/*			
 			case BEG:   if( N ^ V == 0){
 							Reg[PC] = result; 
@@ -716,20 +754,17 @@ void func_conditionalbranch(FILE *trace,instruction_set input_var){
 						break; 
 			*/			
 			case BLT:   if( psw.N ^ psw.Z == 1){
-							Reg[PC] = result; 
-						}
-						break; 
+					Reg[PC] = result;}
+				    break; 
 						
-			case BGT: 	if( (psw.Z | (psw.N ^ psw.V)) == 0){
-							Reg[PC] = result;
-						}
-						break;
+			case BGT:   if( (psw.Z | (psw.N ^ psw.V)) == 0){
+					Reg[PC] = result;}
+				    break;
 						
-			case BLE: 	if( (psw.Z | (psw.N ^ psw.V)) == 1){
-							Reg[PC] = result;					
-						}
-					printf("BLE Branch\n");
-						break; 
+			case BLE:   if( (psw.Z | (psw.N ^ psw.V)) == 1){
+					Reg[PC] = result;}
+				    printf("BLE Branch\n");
+		   		    break;
 		}
 	}
 }

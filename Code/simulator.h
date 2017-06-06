@@ -4,8 +4,10 @@
    Description: Includes all the Register defines, flag defines, type define, function prototypes 
 
 */ 
-#include "/usr/include/stdio.h"
-#include "/usr/include/string.h"
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h> 
+#include <unistd.h>
 
 // DEFINES
 #define byte_length 4 
@@ -80,6 +82,12 @@
 #define INDEX	     06
 #define INDEX_DEF    07
 
+#define IMD	02
+#define ABSDR	03
+#define RLDIR	06
+#define RLINDIR	07
+
+
 // Branch Define
 #define BR		01
 #define BNE     02
@@ -112,53 +120,21 @@
 } [one or more structure variables] 
 */
 
-/*
-/// Zero Operand Instructions // 
-typedef struct zero_operand{
-	unsigned short opcode; 
-} zero_operand; 
- 
-// One Operand Instructions // 
-typedef struct one_operand{ 
-	unsigned short opcode:10;
-	unsigned short addr:6;
-} one_operand; 
-
-
-// one-and-half-operand instructions // 
-typedef struct one_half_operand{
-	unsigned short opcode:7;
-	unsigned short reg:3;
-	unsigned short addr:6; 
-}one_half_operand; 
-
-
-
-// two-operand instructions // 
-typedef struct two_operand{
-	unsigned short opcode:4;
-	unsigned short src:6;
-	unsigned short dst:6;
-}two_operand; 
-
-
-
-// branch instruction // 
-typedef struct branch{
-	unsigned short opcode:8;
-	unsigned short offset:8;
-}branch; 
-
-*/
-
 //// Double-operand instructions /// 
 struct double_operand{
-	unsigned short B:1; 
-	unsigned short Opcode:3;
-	unsigned short Mode_S:3;
-	unsigned short Source:3;
-	unsigned short Mode_D:3;
+	//unsigned short B:1; 
+	//unsigned short Opcode:3;
+	//unsigned short Mode_S:3;
+	//unsigned short Source:3;
+	//unsigned short Mode_D:3;
+	//unsigned short Destination:3;
+
 	unsigned short Destination:3;
+	unsigned short Mode_D:3;
+	unsigned short Source:3;
+	unsigned short Mode_S:3;
+	unsigned short Opcode:3;
+	unsigned short B:1; 
 }double_operand;
 
 struct single_operand{            
