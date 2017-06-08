@@ -1,0 +1,19 @@
+; Register Addressing Modes Test 
+
+START:	MOV 	#10,@#4		; Filling up the Memory
+	MOV	#4,@#100	; 
+	MOV	#100, @#104
+	MOV 	#102, @#106
+	MOV	@#100, R1 	; Test if absolute addressing is contained in a location
+	MOV	R1,R2		; Test Register Mode
+	MOV	#102,R1
+	MOV	(R1), R2	; Test Register deferred
+	MOV 	#100, R1
+	MOV	(R1)+,R2	; 
+	MOV	(R1)+, R2	; R2 Should get 6, and PC should be increment by 2 
+	MOV 	@(R1)+,R2	; Test Autoincrement deferreed - R2 should contain 100 
+	MOV	-(R1), R2	; Takes 6 @ 102 - Autodecrement
+	MOV	@-(R1), R2	; Takes 10 @ 4 - Auto Decrement Deffered
+	MOV	4(R1), R2	; Should be 100 @ (100+4) read - Index
+	MOV	@4(R1),R2	; (100+4) -> 100 -> reads 4 - Index Deferred
+	HALT

@@ -1,0 +1,33 @@
+; Single Operand Test  
+
+
+START: 	MOV 	#1, R1 
+	ClR 	R1		; Testing Clear Operation 
+	MOV 	#2, R1	
+	INC	R1		; Testing Increment
+	MOV	#3, R1
+	DEC	R1		; Testing Decrement
+	MOV	#4, R1
+	SEC			; set the carry
+	ADC 	R1		; Add carry Test
+	MOV 	#5, R1		
+	SBC	R1
+	CLC
+	MOV	#7, R1
+	TST 	R1
+	MOV	#100000, R1
+	NEG 	R1
+	MOV	#10, R1
+	COM	R1
+	MOV	#2, R1
+	ROR	R1
+	MOV	#2, R1
+	ROL	R1
+	SEC
+	MOV	#2, R1
+	ASR	R1
+	MOV	#2, R1
+	ASL	R1
+	MOV	#177400,R1
+	SWAB	R1
+	HALT

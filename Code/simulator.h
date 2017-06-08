@@ -189,26 +189,29 @@ typedef union instruction_set{
 	struct conditional BRANCH;  
 } instruction_set;
 
+// Variable Declaration
+ 
+
 // Function prototypes
 int open_file(char *arr);
 void display();  
 void print_REG(); 
-void write_mem(FILE*,unsigned short type, unsigned short address, unsigned short data);
-unsigned short read_mem(FILE*, unsigned short type, unsigned short address);
-unsigned short Effective_address(FILE*, unsigned short mode, unsigned short source); 
+void write_mem(FILE* trace,unsigned short type, unsigned short address, unsigned short data);
+unsigned short read_mem(FILE* trace, unsigned short type, unsigned short address);
+unsigned short Effective_address(FILE* trace, unsigned short mode, unsigned short source); 
 
 /* Operand Function Prototypes */ 
-void func_doubleoperand(FILE *,instruction_set input_var); 
-void func_singleoperand(FILE *,instruction_set input_var);
-void func_onehalfoperand(FILE *,instruction_set input_var);  
-void func_conditionalbranch(FILE *,instruction_set input_var); 
-void func_jump(FILE *,instruction_set input_var); 
-void func_psw(FILE *,instruction_set input_var); 
-void func_otherinstruction(FILE *,instruction_set input_var);
+void func_doubleoperand(FILE* trace,instruction_set input_var); 
+void func_singleoperand(FILE* trace,instruction_set input_var);
+void func_onehalfoperand(FILE* trace,instruction_set input_var);  
+void func_conditionalbranch(FILE* trace,instruction_set input_var); 
+void func_jump(FILE* trace,instruction_set input_var); 
+void func_psw(FILE* trace,instruction_set input_var); 
+void func_otherinstruction(FILE* trace,instruction_set input_var);
 
 /* Register Read and Write Functions */ 
-signed short reg_READ(FILE *, unsigned short mode, unsigned short source);
-void reg_WRITE(FILE *, unsigned short mode, unsigned short destination,signed short data);
+signed short reg_READ(FILE* trace, unsigned short mode, unsigned short source);
+void reg_WRITE(FILE* trace, unsigned short mode, unsigned short destination,signed short data);
 
 
 
