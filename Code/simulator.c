@@ -2,8 +2,11 @@
    Author: Apurva Gandole, Chandan Muralidhar, Shadmna Samin, Sourabh Balakrishna
   
    Description: 
-
 */ 
+
+/* DEBUG PRINT STATEMENTS */ 
+//#define DEBUG 
+
 
 // Library Declarations 
 #include "../Code/simulator.h" 
@@ -17,15 +20,24 @@ unsigned short Reg [8]; 		// Register size declaration
 unsigned short current_EA;		// Current global EA available to all functions for manipulation  
 
 
-int main(int argc,int argv){
+
+
+int main(void){
 	  /* initial step read file */ 
 	  char *Source = "../TestFiles/source.ascii";   
 	  open_file(Source); 
 	  
 	  int done = 0;
+	  int input; 
 
-	  /* Initial Starting address */ 
-          Reg[PC] = 0; 
+	  /* Initial Starting address */
+	  printf("Input starting program counter value\n");
+	  scanf("%d",&input); 
+	  if(input == NULL){
+		printf("Valid Program counter not entered\n"); 
+		exit(1); 
+	  } 
+          Reg[PC] = input; 
 	  /* Add a command line if else - if the user does not specify a starting address, the starting address defaults to 0 */ 
 	  
 	  instruction_set  fetched_instruction; 
@@ -49,8 +61,10 @@ int main(int argc,int argv){
 	  	fetched_instruction = (union instruction_set)read_mem(trace,INSTRUCTION_FETCH,Reg[PC]); 
 		Reg[PC] = Reg[PC] +  2; 	  	
 		instruction_counter++;
-		printf("INSTRUCTION COUNTER = %d\n",instruction_counter);  	
-		printf("Instruction Fetched !\n");
+		#ifdef DEBUG 
+			printf("INSTRUCTION COUNTER = %d\n",instruction_counter);  	
+			printf("Instruction Fetched !\n");
+		#endif
 		// Decode Instruction  		
                /* Pseudo code */
 		/* 
@@ -79,11 +93,16 @@ int main(int argc,int argv){
 				case 07:
 					/* We will look at bits 11 thru 9 to distinguish between one half operand and SOB */ 
 					if(((fetched_instruction.fetched & 0x0E00) >> 9)== 07){
-						printf("SOB Instruction\n");
+						#ifdef DEBUG 
+							printf("SOB Instruction\n");
+						#endif
+						printf("SOB Instruction - one half operand - NOT IMPLEMENTED in this simulator\n");
 					}
 					else{
-						printf("One Half Operand Instruction\n"); 
-
+						#ifdef DEBUG
+							printf("One Half Operand Instruction\n"); 
+						#endif
+						printf("One HALF operand Instruction - NOT IMPLEMENT in this simulator\n"); 
 					}
 					break; 
 				
@@ -93,39 +112,57 @@ int main(int argc,int argv){
 					if((fetched_instruction.fetched & 0x0800) >> 11){
 						
 						/* If Bits 11 thru 9 follows the patter 0100 - True it is JSR, false it is a one operand */ 
-						if(((fetched_instruction.fetched & 0x0E00)>> 9) == 04){			
-							printf("JSR Instruction\n"); 
+						if(((fetched_instruction.fetched & 0x0E00)>> 9) == 04){
+							#ifdef DEBUG			
+								printf("JSR Instruction\n");
+							#endif 
+							func_jump(trace,fetched_instruction); 
 						}
 						else{
-							printf("One operand Instruction\n"); 
+							#ifdef DEBUG
+								printf("One operand Instruction\n"); 
+							#endif
 							func_singleoperand(trace,fetched_instruction);
 						}		
 					}
 					else{
 						/* If bit 11 thru 6 is true it is SWAB operation or else it is (Other Instructions, Branch, RTS, PSW)  */
 						if(((fetched_instruction.fetched & 0x0FC0) >> 6) == 03){
-							printf("SWAB Operation\n");
+							#ifdef DEBUG
+								printf("SWAB Operation\n");
+							#endif
 							func_singleoperand(trace,fetched_instruction);  	
 
 						}
 						/* Else if bits 11 thru 8 is zero it is not zero it is a branch instruction otherwise (RTS | PSW) */
 						else if(((fetched_instruction.fetched & 0x0F00) >> 8) != 0){
-							printf("Branch Instruction\n");
+							#ifdef DEBUG
+								printf("Branch Instruction\n");
+							#endif
 							func_conditionalbranch(trace,fetched_instruction); 
 							}
 						else{
 							if(((fetched_instruction.fetched & 0x0080) >> 7) == 01){
 								if(((fetched_instruction.fetched & 0x00F8) >> 3) == 010){
-									printf("RTS Instruction\n");
-									 
+									#ifdef DEBUG
+										printf("RTS Instruction\n");
+									#endif
+									func_jump(trace,fetched_instruction);  
 								}
 								else{
+									#ifdef DEBUG
 									printf("PSW Instruction\n"); 
+									#endif
+									func_psw(trace,fetched_instruction); 
+				
 								}
 							}
 							else{
-								printf("Other Instruction\n"); 
-							}
+								#ifdef DEBUG
+								printf("JUMP Instruction\n"); 
+								#endif
+								func_jump(trace,fetched_instruction); 
+							}	
 						}
 						
 					}					
@@ -133,14 +170,18 @@ int main(int argc,int argv){
 
 				/* Matches with - Branch instructions */ 
 				case 010:
-					printf("Branch Instruction\n");
+					#ifdef DEBUG
+						printf("Branch Instruction\n");
+					#endif
 					func_conditionalbranch(trace,fetched_instruction); 
 					break; 
 				/* If none of the above sets are a match it is a two_operand instructions */ 
 				default:
-					printf("Two Operand Instruction\n");
-					printf("Instruction Fetched - %o\n",fetched_instruction.fetched);
-					printf("B %o, Opcode %o, Mode Source %o, Source %o, Mode Destination %o, Destination %o\n",fetched_instruction.TOP.B,fetched_instruction.TOP.Opcode,fetched_instruction.TOP.Mode_S,fetched_instruction.TOP.Source,fetched_instruction.TOP.Mode_D,fetched_instruction.TOP.Destination);
+					#ifdef DEBUG
+						printf("Two Operand Instruction\n");
+						printf("Instruction Fetched - %o\n",fetched_instruction.fetched);
+						printf("B %o, Opcode %o, Mode Source %o, Source %o, Mode Destination %o, Destination %o\n",fetched_instruction.TOP.B,fetched_instruction.TOP.Opcode,fetched_instruction.TOP.Mode_S,fetched_instruction.TOP.Source,fetched_instruction.TOP.Mode_D,fetched_instruction.TOP.Destination);
+					#endif
 					func_doubleoperand(trace,fetched_instruction);  
 			}
 			
@@ -148,15 +189,12 @@ int main(int argc,int argv){
 		// Execute Instruction 
 		print_REG(); 
 		
+		#ifdef DEBUG
 		printf("OLD - %o\n",read_mem(trace,DATA_READ,0)); 
 		printf("NEW - %o\n",read_mem(trace,DATA_READ,2)); 
 		printf("FIBO - %o\n",read_mem(trace,DATA_READ,4)); 
 		printf("N - %o\n",read_mem(trace,DATA_READ,6)); 
-	 
-		
-	
-	        
-		   	
+	 	#endif	
 	 }
 
 	  /* Throw data into mem */ 
@@ -211,8 +249,10 @@ void display(){
 /* Return value from read_mem - either instruction or memory content will be 16 bit return value */  
 unsigned short read_mem(FILE *trace,unsigned short type, unsigned short address){
 		
-		unsigned short mem_value; 
-		printf("Address being read from - %d\n",address); 		
+		unsigned short mem_value;
+		#ifdef DEBUG
+			printf("Address being read from - %d\n",address); 		
+		#endif
 
 		/* Check for odd memory address request - Address allignment check */
 		if((address & 0x0001)){
@@ -231,10 +271,12 @@ unsigned short read_mem(FILE *trace,unsigned short type, unsigned short address)
 		} 
 		/* Trace file generation */
 		fprintf(trace,"%d %d\n",type,address); 
-		printf("DONE READING - %o\n",mem_value); 
+		#ifdef DEBUG
+			printf("DONE READING - %o\n",mem_value); 
+		#endif
 		return mem_value; 
 		
-		 
+
 }
 
 
@@ -258,32 +300,49 @@ unsigned short Effective_Address(FILE *trace, unsigned short mode, unsigned shor
 	
 	if(source == PC){ 
 		switch(mode){
-			case IMD    : printf("Immediate Addressing\n"); 
+			case IMD    : 
+				      #ifdef DEBUG
+				      printf("Immediate Addressing\n"); 
 				      printf("Reg[PC] = %o\n",Reg[PC]);
+				      #endif
 				      x = Reg[PC];
 				      Reg[PC] = x + 2;
+					
+				      #ifdef DEBUG
 				      printf("This shit works\n"); 
-				       
-				      printf("New effective address - %o\n",x); 
+				      printf("New effective address - %o\n",x);
+				      #endif 
 				      return x;
 				      break;
 
-			case RLDIR  : printf("Relative Direct addressing\n");
+			case RLDIR  : 
+				      #ifdef DEBUG	
+				      printf("Relative Direct addressing\n");
 				      printf("REG[PC] before read_mem - %o\n",Reg[PC]); 
+				      #endif
+
 				      x = read_mem(trace,DATA_READ,Reg[PC]);
 				      Reg[PC] = Reg[PC] + 2;
+				      #ifdef DEBUG
 				      printf("Value of X - %o\n",x); 
-				      printf("Value of X + Reg[PC] - %o\n",x + Reg[PC]); 	
+				      printf("Value of X + Reg[PC] - %o\n",x + Reg[PC]);
+				      #endif	 	
 				      return x + Reg[PC]; 	
  				      break; 		
 
-			case ABSDR  : printf("Absolute Direct \n"); 
+			case ABSDR  : 
+				      #ifdef DEBUG 
+				      printf("Absolute Direct \n");
+				      #endif 
 				      x = read_mem(trace,DATA_READ,Reg[PC]);
 			 	      Reg[PC] = Reg[PC] + 2;
 					  return x; 
 				      break;
 
-			case RLINDIR: printf("Relative Indirect addressing\n");
+			case RLINDIR: 
+				      #ifdef DEBUG
+				      printf("Relative Indirect addressing\n");
+				      #endif
 				      x = read_mem(trace,DATA_READ,Reg[PC]);
 				      Reg[PC] = Reg[PC] + 2; 
 				      unsigned short y = x + Reg[PC];
@@ -294,40 +353,70 @@ unsigned short Effective_Address(FILE *trace, unsigned short mode, unsigned shor
 	else{
 	switch(mode) {
 		
-		case R_DEF 	    : return Reg[source];
+		case R_DEF 	    : 
+				      #ifdef DEBUG 
+				      	printf("Register Deferred\n"); 
+				      #endif
+				      return Reg[source];
 				      break;
 						 
 		case AUTOINCR       :
-				      return Reg[source];
+				      #ifdef DEBUG 
+					printf("Auto Increment\n");
+				      #endif 
+				      return Reg[source]; 
 				      Reg[source] = Reg[source]+2;
 				      break;
 								 
-		case AUTOINC_DEF    : return read_mem( trace,DATA_READ,Reg[source]);
+		case AUTOINC_DEF    : 
+				      #ifdef DEBUG 
+				      	printf("Auto Increment Deferred\n");
+				      #endif 
+				      return read_mem( trace,DATA_READ,Reg[source]);
 				      Reg[source] = Reg[source]+2;
 				      break;
 									  
-		case AUTODECR       : Reg[source] = Reg[source] - 2;
+		case AUTODECR       : 
+				      #ifdef DEBUG 
+				      	printf("Auto Decrement\n");
+				      #endif 
+				      Reg[source] = Reg[source] - 2;
 				      return Reg[source];
 				      break;
 									
-		case AUTODECR_DEF   : Reg[source] = Reg[source] - 2;
+		case AUTODECR_DEF   : 
+				      #ifdef DEBUG 
+					printf("Auto Decrement Deferred\n"); 
+				      #endif
+				      Reg[source] = Reg[source] - 2;
 				      return read_mem(trace,DATA_READ,Reg[source]);
 				      break;
 									  
-		case INDEX          : x = read_mem( trace,DATA_READ,Reg[PC]);
+		case INDEX          : 
+				      #ifdef DEBUG
+					printf("Index Addressing\n"); 
+				      #endif
+				      x = read_mem( trace,DATA_READ,Reg[PC]);
 				      Reg[source] = Reg[source] + x;
 				      Reg[PC] = Reg[PC] + 2;
 				      return Reg[source];
 				      break;
 									  
-		case INDEX_DEF      : x = read_mem( trace,DATA_READ,Reg[PC]);
+		case INDEX_DEF      : 
+				      #ifdef DEBUG
+					printf("Index Deferred\n");
+				      #endif
+				      x = read_mem( trace,DATA_READ,Reg[PC]);
 				      Reg[source] = Reg[source] + x;
 				      Reg[PC] = Reg[PC] + 2;
    				      return read_mem(trace,DATA_READ, Reg[source]);
    				      break;
    								  
-		default             : return source; 
-				      printf("Following mode doesn't require Effective Address calculation\n");
+		default             : 
+				      #ifdef DEBUG 
+				      printf("Register Mode\n");
+				      #endif
+				      return source; 
 				      break;
 									  
 	}
@@ -338,10 +427,14 @@ unsigned short Effective_Address(FILE *trace, unsigned short mode, unsigned shor
 /* Returns the 16 bit data in the Registers */ 
 signed short reg_READ(FILE *trace, unsigned short mode, unsigned short source) {
 	unsigned short temp;
-	printf("READING FROM REG\n"); 
+	#ifdef DEBUG 
+	printf("READING FROM REG\n");
+	#endif 
 	switch(mode) {
 		case REG			: temp =  Reg[source];
-						  printf("Value stored in temp : %o\n",Reg[source]);  
+						  #ifdef DEBUG 
+						  printf("Value stored in temp : %o\n",Reg[source]);
+						  #endif  
 						  break;
 	
 		default 			: temp = Effective_Address(trace, mode, source);
@@ -349,7 +442,9 @@ signed short reg_READ(FILE *trace, unsigned short mode, unsigned short source) {
 						  temp =  read_mem(trace,DATA_READ,temp); 
 					 	  break;									  
 	}
-	printf("DONE READING FROM REG\n"); 	
+	#ifdef DEBUG 
+	printf("DONE READING FROM REG\n");
+	#endif 	
 	return temp; 
 }
 
@@ -383,7 +478,9 @@ void func_doubleoperand(FILE *trace, instruction_set input_var){
 	unsigned short Mode_D = input_var.TOP.Mode_D; 	
 	switch(input_var.TOP.Opcode){
 		case MOV: 
-			  printf("MOV INSTRUCTION\n");  
+			  #ifdef DEBUG 
+			  printf("MOV INSTRUCTION\n");
+			  #endif  
 			  result = reg_READ(trace,input_var.TOP.Mode_S,input_var.TOP.Source);
 			  reg_WRITE(trace,input_var.TOP.Mode_D, input_var.TOP.Destination, result);
 			  if(result == 0){
@@ -395,15 +492,19 @@ void func_doubleoperand(FILE *trace, instruction_set input_var){
 			  }else{psw.N = 0;}
 
 			  psw.V = 0;
-			  printf("DONE WITH MOV INSTRUCTION -SHOULD FETCH A NEW INSTRUCTION\n"); 
+			   
 			  break; 
 				  
-		case CMP:
+		case CMP: 
+			  #ifdef DEBUG
 			  printf("CMP Instruction\n");		
+			  #endif
 			  temp1 = reg_READ(trace,input_var.TOP.Mode_S,input_var.TOP.Source);
 			  temp2 = reg_READ(trace,input_var.TOP.Mode_D,input_var.TOP.Destination); 
 			  result = temp1 - temp2;
+			  #ifdef DEBUG
 		          printf("RESULT FOR CMP = %d\n",result); 			
+			  #endif
 			  if(result == 0){  		   
 			  	psw.Z = 1; 		
 			  }else{psw.Z = 0;} 		
@@ -422,7 +523,9 @@ void func_doubleoperand(FILE *trace, instruction_set input_var){
 		case BIT: /* BIT Test */ 
 			  /* Computes dest & src */ 
 			  /* NOT STORED */
+			  #ifdef DEBUG 
 			  printf("BIT Instruction\n");
+			  #endif 
 			  temp1 = reg_READ(trace,input_var.TOP.Mode_S,input_var.TOP.Source);
 			  temp2 = reg_READ(trace,input_var.TOP.Mode_D,input_var.TOP.Destination);					
 			  result = temp1 ^ temp2; 
@@ -873,6 +976,124 @@ void func_conditionalbranch(FILE *trace,instruction_set input_var){
 	// }
 // }
 
+/* JUMP Instruction */ 
+void func_jump(FILE *trace, instruction_set input_var){
+	/* JUMP */
+	/* JUMP TO ADDRESS - 0001AA */ 
+	if(((input_var.fetched & 0177700) >> 6) == 00001){
+		 #ifdef DEBUG
+			printf("JUMP instruction\n"); 
+		 #endif 
+		  
+		 Reg[PC] = (input_var.fetched & 0000077); 		
+	}
+	/* RTS */
+	/* Return from Subroutine  - 00020R */ 
+	else if(((input_var.fetched & 0177700) >> 6)== 000020){
+		#ifdef DEBUG 
+			printf("RTS Instruction\n");
+		#endif
+		unsigned short R = (input_var.fetched & 0000007); 
+		Reg[PC] = Reg[R]; 
+		R = read_mem(trace,DATA_READ,Reg[SP]);
+		Reg[SP] = Reg[SP] + 2; 
+	}
+	/* JSR  */
+	/* Jump to Subroutine - 004RAA */ 
+	else if(((input_var.fetched & 0177000) >> 9) == 0004){
+		#ifdef DEBUG 
+			printf("RTS Instruction\n");
+		#endif
+		unsigned short temp = (input_var.fetched & 0000077);
+		Reg[SP] = Reg[SP] - 2;
+		unsigned short R = (input_var.fetched & 0000700) >> 6; 
+		Reg[SP] = Reg[R]; 
+		Reg[R] = Reg[PC]; 
+		Reg[PC] = temp; 
+	}
+} 
+
+/* PSW Instruction */
+void func_psw(FILE *trace, instruction_set input_var){
+	unsigned short octal = input_var.fetched; 
+	/* Set Priority Level */ 
+	if((octal >> 1) == 000023){
+		#ifdef DEBUG 
+			printf("Set Priority Level\n"); 
+		#endif
+	}
+	/* CLC - Clear C */
+	else if(octal == CLC){
+		#ifdef DEBUG
+			printf("Clear N"); 
+		#endif
+		psw.C = 0; 
+	}
+	/* CLV - Clear V */
+	else if(octal == CLV){
+		#ifdef DEBUG
+			printf("Clear V");  
+		#endif
+		psw.V = 0;
+	}
+	/* CLZ - Clear Z */
+	else if(octal == CLZ){
+		#ifdef DEBUG
+			printf("Clear Z");  
+		#endif
+		psw.Z = 0;
+	} 
+	/* CLN - Clear N */
+	else if(octal == CLN){
+		#ifdef DEBUG
+			printf("Clear N"); 
+		#endif
+		psw.N = 0;
+	} 
+	/* SEC - Set C */
+	else if(octal == SEC){
+		#ifdef DEBUG
+			printf("Set C"); 
+		#endif
+		psw.C = 1;
+	} 
+	/* SEV - Set V*/
+	else if(octal == SEV){
+		#ifdef DEBUG
+			printf("Set V") 
+		#endif
+		psw.V = 1;
+	} 
+	/* SEZ - Set Z */
+	else if(octal == CLZ){
+		#ifdef DEBUG
+			printf("Set Z"); 
+		#endif
+		psw.Z = 1;
+	} 
+	/* SEN - Set N */
+	else if(octal == CLZ){
+		#ifdef DEBUG
+			printf("Set N"); 
+		#endif
+		psw.N = 1;
+	} 
+	/* CLC - Clear C */
+	else if(octal == CLZ){
+		#ifdef DEBUG
+			printf("Clear Conditions Codes\n"); 
+		#endif 
+		psw.C = 0; psw.V = 0; psw.Z = 0; psw.N = 0; 
+	} 
+	/* SCC - Set Condition codes */
+	else if(octal == SCC){
+		#ifdef DEBUG
+			printf("Set Condition Code\n");
+		#endif
+		psw.C = 1; psw.V = 1; psw.Z = 1; psw.N = 1; 
+	} 
+}
+
 
 int open_file(char *arr){ 
 	/* Opens the filename pointed to - 'r' opens a file for reading */ 
@@ -909,10 +1130,14 @@ int open_file(char *arr){
 		}
 		else{ 
 	   		mem[mem_pointer] = octal_value & 0000377;
+			#ifdef DEBUG
 			printf("Mem Value - %o, Mem Index - %d\n",mem[mem_pointer], mem_pointer);
+			#endif
 			mem[mem_pointer+1] = (octal_value & 0177400) >> 8; 
+			#ifdef DEBUG
 			printf("Mem Value - %o, Mem Index - %d\n",mem[mem_pointer+1], mem_pointer+1); 
-			printf("Final Value - %o\n", (mem[mem_pointer+1] << 8) | (mem[mem_pointer]));  
+			printf("Final Value - %o\n", (mem[mem_pointer+1] << 8) | (mem[mem_pointer])); 
+			#endif 
 			mem_pointer = mem_pointer + 2; 
 		}
 	

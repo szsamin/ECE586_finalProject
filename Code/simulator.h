@@ -108,6 +108,17 @@
 #define BLOS    03
 
 
+// PSW Define
+#define CLC 0000241
+#define CLV 0000242
+#define CLZ 0000244
+#define CLN 0000250
+#define SEC 0000261
+#define SEV 0000262
+#define SEZ 0000264
+#define SEN 0000270
+#define CCC 0000257
+#define SCC 0000277
 
 
 
@@ -122,13 +133,6 @@
 
 //// Double-operand instructions /// 
 struct double_operand{
-	//unsigned short B:1; 
-	//unsigned short Opcode:3;
-	//unsigned short Mode_S:3;
-	//unsigned short Source:3;
-	//unsigned short Mode_D:3;
-	//unsigned short Destination:3;
-
 	unsigned short Destination:3;
 	unsigned short Mode_D:3;
 	unsigned short Source:3;
@@ -138,22 +142,12 @@ struct double_operand{
 }double_operand;
 
 struct single_operand{            
-	//unsigned short Opcode:10;  
-	//unsigned short Mode:3;
-	//unsigned short Register:3;
-	
 	unsigned short Register:3;
 	unsigned short Mode:3;
 	unsigned short Opcode:10; 
 }single_operand;
 
 struct onehalf_operand{
-	//unsigned short Remainder:4;
-	//unsigned short Opcode:3;
-	//unsigned short Register:3;
-	//unsigned short Mode:3;
-	//unsigned short Source:3;
-
 	unsigned short Source:3;
 	unsigned short Mode:3;
 	unsigned short Register:3;
@@ -162,11 +156,6 @@ struct onehalf_operand{
 } onehalf_operand; 
 
 struct conditional{
-	//unsigned short x:1;
-	//unsigned short Remainder:4; 
-	//unsigned short Opcode:3;
-	//unsigned short Offset:8;
-
 	signed short Offset:8;
 	unsigned short Opcode:3;
 	unsigned short Remainder:4;
@@ -218,8 +207,8 @@ void func_psw(FILE *,instruction_set input_var);
 void func_otherinstruction(FILE *,instruction_set input_var);
 
 /* Register Read and Write Functions */ 
-signed short reg_READ(FILE *trace, unsigned short mode, unsigned short source);
-void reg_WRITE(FILE *trace, unsigned short mode, unsigned short destination,signed short data);
+signed short reg_READ(FILE *, unsigned short mode, unsigned short source);
+void reg_WRITE(FILE *, unsigned short mode, unsigned short destination,signed short data);
 
 
 
