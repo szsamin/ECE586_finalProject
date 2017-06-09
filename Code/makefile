@@ -19,9 +19,9 @@ obj2ascii:
 
 compile:
 	echo $(CURDIR) 
-	@ ${CC} ${CFLAGS} -Wall simulator.h simulator.c 	 	 	
+	@ ${CC} ${CFLAGS} -Wall simulator.h simulator.c `pkg-config --libs --cflags gtk+-2.0` 	 	 	
 run:
-	@ ./a.out
+	./a.out
 
 trace:
 	cat tracefile.txt 

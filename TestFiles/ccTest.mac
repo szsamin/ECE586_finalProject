@@ -1,0 +1,13 @@
+; Conditional code test
+
+START: SEC ;set carry
+	   CLC ;clear carry
+	   SEV ;set overflow flag
+	   CLV ;clear overflow flag
+	   SEZ ;set zero
+	   CLZ ;clear zero
+	   SEN ;set negative
+	   CLN ;clear negative
+	   SCC ;set condition codes
+	   CCC ;clear condition codes
+	   HLT

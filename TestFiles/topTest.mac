@@ -1,0 +1,20 @@
+; Double Operand Test
+
+START:  MOV #5,R0       	
+	MOV #2,R1  		
+	ADD R0,R1 ; check addition operation
+	MOV #6,R1
+	MOV #6,R2					
+	SUB R1,R2 ; check addition operation
+	MOV #3,R1			
+	CMP R1,#3 ; check compare operation
+	MOV #2,R1
+	MOV #1,R2
+	BIT R1,R2 ; Bit test operation  
+	MOV #3,R1
+	MOV #2,R2
+	BIC R1,R2 ; Bit clear operation
+	MOV #5,R1
+	MOV #1,R2
+	BIS R1,R2 ; Bit set opeation	
+HALT

@@ -19,8 +19,77 @@ unsigned short Reg [8]; 		// Register size declaration
 
 unsigned short current_EA;		// Current global EA available to all functions for manipulation  
 
-int main(void){
+/* GUI STUFF - STILL IN WORKS */ 
+#include <gtk/gtk.h>
+
+#ifdef GUI 
+GtkWidget *btnalign, *btn, *window,*table, *tablealign, *r0, *r1, *r2, *r3, *r4, *r5, *r6, *r7, *r0_v, *r1_v, *r2_v, *r3_v, *r4_v, *r5_v, *r6_v, *r7_v, *flags, *flagsVal, *counter, *counterval; 
+static void destroy(GtkWidget *widget, gpointer data)
+{
+    gtk_main_quit();
+}
+
+
+static void initialize_window(GtkWidget* window)
+{
+  gtk_window_set_title(GTK_WINDOW(window),"ECE 586 - PDP 11 Simulator"); //Set window title
+  gtk_window_set_default_size (GTK_WINDOW (window), 640, 400); //Set default size for the window
+  gtk_window_set_position(GTK_WINDOW(window),GTK_WIN_POS_CENTER); 
+
+  
+   //btnalign = gtk_alignment_new(0,0,0,0);
+   //btn = gtk_button_new_with_label("Step");   
+   //gtk_container_add(GTK_CONTAINER(btnalign),btn); 
+   //gtk_widget_set_size_request(btn,70,30);
+   //gtk_container_add(GTK_CONTAINER(window),btnalign); 
+
+
+  /* Create a 1x2 table */
+  table = gtk_table_new (10, 2, TRUE);
+  //tablealign = gtk_alignment_new(5,5,0,0);
+  //gtk_container_add(GTK_CONTAINER(tablealign),table); 
+  gtk_container_add (GTK_CONTAINER (window), table);
+
+
+
+  r0 = gtk_label_new("R0");
+  gtk_table_attach_defaults (GTK_TABLE (table), r0, 0, 1, 0, 1);
+
+  r1 = gtk_label_new("R1");
+  gtk_table_attach_defaults (GTK_TABLE (table), r1, 0, 1, 1, 2);
+
+  r2 = gtk_label_new("R2");
+  gtk_table_attach_defaults (GTK_TABLE (table), r2, 0, 1, 2, 3);
+
+  r3 = gtk_label_new("R3");
+  gtk_table_attach_defaults (GTK_TABLE (table), r3, 0, 1, 3, 4);
+
+  r4 = gtk_label_new("R4");
+  gtk_table_attach_defaults (GTK_TABLE (table), r4, 0, 1, 4, 5);
+
+  r5 = gtk_label_new("R5");
+  gtk_table_attach_defaults (GTK_TABLE (table), r5, 0, 1, 5, 6);
+
+  r6 = gtk_label_new("SP");
+  gtk_table_attach_defaults (GTK_TABLE (table), r6, 0, 1, 6, 7);
+
+  r7 = gtk_label_new("PC");
+  gtk_table_attach_defaults (GTK_TABLE (table), r7, 0, 1, 7, 8);
+
+  flags = gtk_label_new("Flags");
+  gtk_table_attach_defaults (GTK_TABLE (table), r7, 0, 1, 8, 9);
+
+  counter = gtk_label_new("Instruction Counter");
+  gtk_table_attach_defaults (GTK_TABLE (table), r7, 0, 1, 9, 10);
+
+  g_signal_connect (window, "destroy", G_CALLBACK (destroy), NULL); //End application when close button clicked
+
+}
+#endif 
+
+int main (int argc, char *argv[]){
 	  /* initial step read file */ 
+
 	  char *Source = "../TestFiles/source.ascii";   
 	  open_file(Source); 
 	  
@@ -46,8 +115,7 @@ int main(void){
 	   
 
 	  done = 0; // Ignores the Fetch > Decode > Execute for now 
-	  while(!done){
-		
+	  while(!done){		
 		// Step by Step Execution 
 		// Waits for Enter Key press
 		#ifdef STEP	
@@ -186,16 +254,70 @@ int main(void){
 
 		print_REG(); 
 
+		#ifdef GUI	  
+
+		 gtk_init(&argc, &argv);
+
+
+	 	 //Create the main window
+		 window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+		 initialize_window(window);	
+
+
+		  char str[80]; 
+		  sprintf(str, "%o", Reg[0]);
+		  r0_v = gtk_label_new(str);
+		  gtk_table_attach_defaults (GTK_TABLE (table), r0_v, 1, 2, 0, 1);
+
+
+		  sprintf(str, "%o", Reg[1]);
+		  r1_v = gtk_label_new(str);
+		  gtk_table_attach_defaults (GTK_TABLE (table), r1_v, 1, 2, 1, 2);
+
+
+		  sprintf(str, "%o", Reg[2]);
+		  r2_v = gtk_label_new(str);
+		  gtk_table_attach_defaults (GTK_TABLE (table), r2_v, 1, 2, 2, 3);
+
+		  sprintf(str, "%o", Reg[3]);
+		  r3_v = gtk_label_new(str);
+		  gtk_table_attach_defaults (GTK_TABLE (table), r3_v, 1, 2, 3, 4);
+
+		  sprintf(str, "%o", Reg[4]);
+		  r4_v = gtk_label_new(str);
+		  gtk_table_attach_defaults (GTK_TABLE (table), r4_v, 1, 2, 4, 5);
+
+		  sprintf(str, "%o", Reg[5]);
+		  r5_v = gtk_label_new(str);
+		  gtk_table_attach_defaults (GTK_TABLE (table), r5_v, 1, 2, 5, 6);
+
+		  sprintf(str, "%o", Reg[6]);
+		  r6_v = gtk_label_new(str);
+		  gtk_table_attach_defaults (GTK_TABLE (table), r6_v, 1, 2, 6, 7);
+
+		  sprintf(str, "%o", Reg[7]);
+		  r7_v = gtk_label_new(str);
+		  gtk_table_attach_defaults (GTK_TABLE (table), r7_v, 1, 2, 7, 8);
+
+		  sprintf(str, "%li", instruction_counter);
+		  counterval = gtk_label_new(str);
+		  gtk_label_set_text(counterval,str); 
+		  printf("Shit is looping\n"); 
+		  gtk_table_attach_defaults (GTK_TABLE (table), counterval, 1, 2, 9, 10);
+	 	  gtk_widget_show_all(window);
+		  gtk_main();
+		#endif
 	 }
 
-	 /* SUMMARY UPON COMPLETION */
-	 printf("Total Instruction Execution - %li\n",instruction_counter); 
+	  /* SUMMARY UPON COMPLETION */
+	  printf("Total Instruction Execution - %li\n",instruction_counter); 
 
 	  /* Display function */ 
 	  display(); 
 
 	  /* Trace file end */ 
 	  fclose(trace); 
+	
 	  return(0); 
 }
 
@@ -576,7 +698,7 @@ void func_doubleoperand(FILE *trace, instruction_set input_var){
 			  #ifdef DEBUG
 			  printf("BIS Instruction\n");
 			  #endif
-			  temp1 = ~reg_READ(trace,input_var.TOP.Mode_S,input_var.TOP.Source);
+			  temp1 = reg_READ(trace,input_var.TOP.Mode_S,input_var.TOP.Source);
 			  temp2 = reg_READ(trace,input_var.TOP.Mode_D,input_var.TOP.Destination);
 			  result = temp1 | temp2; 
 			  /* only for instruction that reuse destination */
@@ -641,7 +763,7 @@ void func_doubleoperand(FILE *trace, instruction_set input_var){
 
 			 	 psw.V = 0; 
 				
-			  	psw.C = !((result & 0200000) >> 16); 
+			  	 psw.C = !((result & 0200000) >> 16); 
 			  	/* Check for overflow bit - if source MSB XOR destination MSB is true, also negate of destination MSB XOR result MSB is true, then overflow must be true */ 
 		         	 psw.V = (((temp1 & 0100000)>> 15) ^ (( temp2 & 0100000 >> 15))) && !(((temp2 & 0100000) >> 15) && (result & 0100000) >> 15); 	
 				} 
@@ -681,7 +803,7 @@ void func_singleoperand(FILE *trace,instruction_set input_var){
 			  /* only for instruction that reuse destination */
 			  if(Mode != 0){write_mem(trace,DATA_WRITE,current_EA,result);}
 			  else{reg_WRITE(trace,input_var.OOP.Mode, input_var.OOP.Register, result);}
-			  write_mem(trace,DATA_WRITE,current_EA,result); 
+			   
 			   
 
   			  psw.Z = (result == 0) ? 1 : 0;
@@ -847,7 +969,7 @@ void func_singleoperand(FILE *trace,instruction_set input_var){
 	
 			  psw.Z = (result == 0) ? 1 : 0;
 			  psw.N = (result < 0) ? 1 : 0; 
-			  psw.C = (temp1 & 0100000);
+			  psw.C = (temp1 & 0100000) >> 15;
 			  psw.V = psw.N ^ psw.C; 
 			
 			  break;
@@ -1142,7 +1264,7 @@ void func_psw(FILE *trace, instruction_set input_var){
 	/* CLC - Clear C */
 	else if(octal == CLC){
 		#ifdef DEBUG
-			printf("Clear N"); 
+			printf("Clear C"); 
 		#endif
 		psw.C = 0; 
 	}
@@ -1182,21 +1304,21 @@ void func_psw(FILE *trace, instruction_set input_var){
 		psw.V = 1;
 	} 
 	/* SEZ - Set Z */
-	else if(octal == CLZ){
+	else if(octal == SEZ){
 		#ifdef DEBUG
 			printf("Set Z"); 
 		#endif
 		psw.Z = 1;
 	} 
 	/* SEN - Set N */
-	else if(octal == CLZ){
+	else if(octal == SEN){
 		#ifdef DEBUG
 			printf("Set N"); 
 		#endif
 		psw.N = 1;
 	} 
-	/* CLC - Clear C */
-	else if(octal == CLZ){
+	/* CCC - Clear Conditons */
+	else if(octal == CCC){
 		#ifdef DEBUG
 			printf("Clear Conditions Codes\n"); 
 		#endif 
