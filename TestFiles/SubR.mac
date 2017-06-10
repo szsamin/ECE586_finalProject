@@ -1,0 +1,9 @@
+; JSR and RTS
+; To test JSR and RTS
+
+START: MOV #1, R1
+       JSR R1, SUBR
+	   HALT
+SUBR: MOV #4,R1
+	  RTS R1		; RTS Return to subroutine
+	  

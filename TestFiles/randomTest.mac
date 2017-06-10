@@ -1,0 +1,9 @@
+; Random Tests
+
+START:  MOV #177777, R1
+	INC R1
+	MOV #177777, R1
+	ADD #20, R1
+	MOV #0, R1
+	DEC R1
+	HALT

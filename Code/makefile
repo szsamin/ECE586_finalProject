@@ -9,7 +9,12 @@ FAUST = ~faustm/bin
 
 all:	gensource compile run
 
+ALL:	movascii compile run 
+
 gensource: macro11 obj2ascii
+
+movascii:
+	@ cp ${PROJ}/TestFiles/$(TEST) ${PROJ}/TestFiles/source.ascii 
 
 macro11:
 	@ ${FAUST}/macro11 ${PROJ}/TestFiles/${TEST} -o ${PROJ}/TestFiles/source.obj -l ${PROJ}/Testfiles/source.lst	 

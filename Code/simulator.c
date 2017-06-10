@@ -1,11 +1,6 @@
-/* Simulator C file 
-   Author: Apurva Gandole, Chandan Muralidhar, Shadmna Samin, Sourabh Balakrishna
-  
-   Description: 
-*/ 
 
-/* DEBUG PRINT STATEMENTS */ 
- 
+
+
 
 
 // Library Declarations 
@@ -101,7 +96,9 @@ int main (int argc, char *argv[]){
 	  scanf("%d",&input); 
 	   
           Reg[PC] = input; 
-	  /* Add a command line if else - if the user does not specify a starting address, the starting address defaults to 0 */ 
+	  
+	  Reg[SP] = 0177776; 
+	/* Add a command line if else - if the user does not specify a starting address, the starting address defaults to 0 */ 
 	  
 	  instruction_set  fetched_instruction; 
           long int instruction_counter = 0; 
@@ -173,6 +170,7 @@ int main (int argc, char *argv[]){
 				
 				/* Matches with - One operand and JSR and SWAB and RTS and PSW and Branch and other instructions */ 
 				case 00:
+					printf("CASE FOR RTS - CHECK\n");
 					/* We will look at the 11th bit to determine between (JSR, One Op) or the rest */ 
 					if((fetched_instruction.fetched & 0x0800) >> 11){
 						
@@ -207,8 +205,9 @@ int main (int argc, char *argv[]){
 							func_conditionalbranch(trace,fetched_instruction); 
 							}
 						else{
+							
 							if(((fetched_instruction.fetched & 0x0080) >> 7) == 01){
-								if(((fetched_instruction.fetched & 0x00F8) >> 3) == 010){
+								if(((fetched_instruction.fetched &  000700) == 000200)){
 									#ifdef DEBUG
 										printf("RTS Instruction\n");
 									#endif
@@ -1174,47 +1173,6 @@ void func_conditionalbranch(FILE *trace,instruction_set input_var){
 	}
 }
 
-
- // STILL NEED TO FIGURE IF WE NEED ONE HALF OPERATION 
-
-// /* One Half Intruction Function - Some additional two-operand require source operand */ 
-// void func_onehalfoperand(FILE *trace, instruction_set input_var){
-	// unsigned short temp1;
-	// unsigned short temp2;
-	// unsigned int result; 
-	
-
-	// /* WORK IN PROGRESS */ 
-	// switch(input_var.OHOP.Opcode){
-		// case MUL:	temp1 = reg_READ(trace,input_var.OHOP.Mode,input_var.OHOP.Source);
-					// result = Reg[input_var.OHOP.Register] * temp1; 
-					
-					// write_mem(); 
-					// break;
-					
-		// case DIV: 	/* Divide */ 
-					
-					// break;
-					
-		// case ASH:   /* Arithmetic shift */ 
-					
-					// break;
-
-		// case ASHC:  /* Arithmetic shift combined */ 
-					
-					// break;
-					
-		// case XOR:   /* Exclusive OR */ 
-					
-					// break;
-
-					
-		// case SOB:   /* Subtract one and branch */ 
-					
-					// break;  		
-	// }
-// }
-
 /* JUMP Instruction */ 
 void func_jump(FILE *trace, instruction_set input_var){
 	/* JUMP */
@@ -1228,25 +1186,30 @@ void func_jump(FILE *trace, instruction_set input_var){
 	}
 	/* RTS */
 	/* Return from Subroutine  - 00020R */ 
-	else if(((input_var.fetched & 0177700) >> 6)== 000020){
+	else if(((input_var.fetched & 0177700) >> 3) == 000020){
 		#ifdef DEBUG 
-			printf("RTS Instruction\n");
+			printf("NOT HAPPENING Instruction\n");
 		#endif
 		unsigned short R = (input_var.fetched & 0000007); 
 		Reg[PC] = Reg[R]; 
 		R = read_mem(trace,DATA_READ,Reg[SP]);
 		Reg[SP] = Reg[SP] + 2; 
+		printf("R - %o, NEW PC - %o, SP - %o\n",R,Reg[PC], Reg[SP]);
 	}
 	/* JSR  */
 	/* Jump to Subroutine - 004RAA */ 
 	else if(((input_var.fetched & 0177000) >> 9) == 0004){
 		#ifdef DEBUG 
-			printf("RTS Instruction\n");
+			printf("JSR Instruction\n");
 		#endif
 		unsigned short temp = (input_var.fetched & 0000077);
 		Reg[SP] = Reg[SP] - 2;
 		unsigned short R = (input_var.fetched & 0000700) >> 6; 
-		Reg[SP] = Reg[R]; 
+		#ifdef DEBUG
+			printf("R - %o, AA - %o, SP - %o, Input Variable - %o\n", R, temp, Reg[SP],input_var.fetched); 
+		#endif
+		temp = Effective_Address(trace, (temp & 070) >> 3, (temp & 007));  
+		write_mem(trace,DATA_WRITE,Reg[SP],Reg[R]); 
 		Reg[R] = Reg[PC]; 
 		Reg[PC] = temp; 
 	}
@@ -1352,11 +1315,7 @@ int open_file(char *arr){
 	
 	while(1){ 	
 		fscanf( fp,"%c%o\n",&character,&octal_value); 
-		//printf("Begin - %c, Octal - %o\n ", character,octal_value);   		
-
-		if(feof(fp)){
-			break; 
-		}
+		printf("Begin - %c, Octal - %o\n ", character,octal_value);   		
 			
 		/* populate the memory */ 
 		/* "@" gives a warning - should '@'. In C single quoutes delimits a single character whereas double qoutes are for strings */ 
@@ -1378,6 +1337,10 @@ int open_file(char *arr){
 			printf("Final Value - %o\n", (mem[mem_pointer+1] << 8) | (mem[mem_pointer])); 
 			#endif 
 			mem_pointer = mem_pointer + 2; 
+		}
+
+		if(feof(fp)){
+			break; 
 		}
 	
  
