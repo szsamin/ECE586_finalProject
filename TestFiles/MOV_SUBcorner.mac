@@ -1,0 +1,7 @@
+;MOV SUB corner cases
+START:  MOV #-32768., R1
+	MOV #1, R2
+	SUB R2, R1
+	BCS J2
+J2:     MOV #0, R1
+	HALT

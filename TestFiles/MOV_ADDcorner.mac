@@ -1,0 +1,21 @@
+;MOV ADD corner cases
+
+START: MOV #177777, R1
+	   MOV #1, R2
+	   ADD R2, R1	
+	   BEQ J1	;Z=1 due to rollover
+	   MOV #3, R3 
+J1:    MOV #1, R4	
+	   MOV #-2, R5
+	   ADD R4, R5 ; result will be negative in R5
+	   BMI J2
+J2:    CLV
+	   MOV #0, R1
+	   MOV #0, R2
+	   MOV #0, R3
+	   MOV #177777, R1
+	   MOV #1, R2
+	   ADD R1, R2 
+	   BVS J3	; branch if overflow set 
+	   MOV #3, R3
+J3:    HALT

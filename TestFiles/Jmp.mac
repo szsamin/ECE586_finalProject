@@ -1,0 +1,12 @@
+; JMP JSR RTS Instructions
+
+START:	MOV #3,R0
+	JSR PC,L2
+	MOV #1,R1
+	JMP HALT
+
+L2:	MOV #1,R2
+	RTS PC
+
+LOCAT:	HALT	
+ 

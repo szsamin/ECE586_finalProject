@@ -206,8 +206,8 @@ int main (int argc, char *argv[]){
 							}
 						else{
 							
-							if(((fetched_instruction.fetched & 0x0080) >> 7) == 01){
-								if(((fetched_instruction.fetched &  000700) == 000200)){
+							if(((fetched_instruction.fetched & 0000700) >> 6) == 2){
+								if(((fetched_instruction.fetched &  0177770) == 000200)){
 									#ifdef DEBUG
 										printf("RTS Instruction\n");
 									#endif
@@ -603,7 +603,7 @@ void func_doubleoperand(FILE *trace, instruction_set input_var){
 	/* temps used for comparing */
 	signed short temp1;	
 	signed short temp2;	
-	
+      
 	unsigned short Mode_D = input_var.TOP.Mode_D; 	
 	switch(input_var.TOP.Opcode){
 		case MOV: 
@@ -611,6 +611,7 @@ void func_doubleoperand(FILE *trace, instruction_set input_var){
 			  printf("MOV INSTRUCTION\n");
 			  #endif  
 			  result = reg_READ(trace,input_var.TOP.Mode_S,input_var.TOP.Source);
+                          
 			  reg_WRITE(trace,input_var.TOP.Mode_D, input_var.TOP.Destination, result);
 			  if(result == 0){
 			  	psw.Z = 1; 
@@ -631,6 +632,7 @@ void func_doubleoperand(FILE *trace, instruction_set input_var){
 			  temp1 = reg_READ(trace,input_var.TOP.Mode_S,input_var.TOP.Source);
 			  temp2 = reg_READ(trace,input_var.TOP.Mode_D,input_var.TOP.Destination); 
 			  result = temp1 - temp2;
+                          
 			  #ifdef DEBUG
 		          printf("RESULT FOR CMP = %d\n",result); 			
 			  #endif
@@ -640,13 +642,15 @@ void func_doubleoperand(FILE *trace, instruction_set input_var){
 	   	
 			  if(result < 0){
 				psw.N = 1;  		  /* not sure yet about sign overflow */ 
-			  }else{psw.N = 0;} 
+			  }else{psw.N = 0;}
  
-			  psw.C = !((result & 0200000) >> 16); 
-			  /* Check for overflow bit - if source MSB XOR destination MSB is true, also negate of destination MSB XOR result MSB is true, then overflow must be true */ 
-		          psw.V = (((temp1 & 0100000)>> 15) ^ ((( temp2 & 0100000) >> 15))) && !(((temp2 & 0100000) >> 15) ^ ((result & 0100000) >> 15)); 	
-			
-
+			  psw.C = (result > 0) ? !((result & 0200000) >> 16): 0; 
+			  unsigned short msb_source =  (temp1 & 0100000) >> 15; 
+			  unsigned short msb_destination = (temp2 & 0100000) >> 15; 
+			  unsigned short msb_result = (result & 0100000) >> 15;  
+			 /* Check for overflow bit - if the negate of source MSB XOR destination MSB is true, also destination MSB XOR result MSB is true, then overflow must be true */ 
+		          psw.V = !(msb_source ^ msb_destination) && (msb_destination & msb_result); 
+			  
 			  break;
 					
 		case BIT: /* BIT Test */ 
@@ -657,7 +661,8 @@ void func_doubleoperand(FILE *trace, instruction_set input_var){
 			  #endif 
 			  temp1 = reg_READ(trace,input_var.TOP.Mode_S,input_var.TOP.Source);
 			  temp2 = reg_READ(trace,input_var.TOP.Mode_D,input_var.TOP.Destination);					
-			  result = temp1 ^ temp2; 
+			  result = temp1 ^ temp2;
+                           
 			  if(result == 0){
 			  	psw.Z = 1; 
 			  }else{psw.Z = 0;}
@@ -675,7 +680,8 @@ void func_doubleoperand(FILE *trace, instruction_set input_var){
 			  #endif 
 			  temp1 = ~reg_READ(trace,input_var.TOP.Mode_S,input_var.TOP.Source);
 			  temp2 = reg_READ(trace,input_var.TOP.Mode_D,input_var.TOP.Destination);
-			  result = temp1 & temp2; 
+			  result = temp1 & temp2;
+                           
 
 			  /* only for instruction that reuse destination */
 			  if(Mode_D != 0){write_mem(trace,DATA_WRITE,current_EA,result);}
@@ -699,7 +705,8 @@ void func_doubleoperand(FILE *trace, instruction_set input_var){
 			  #endif
 			  temp1 = reg_READ(trace,input_var.TOP.Mode_S,input_var.TOP.Source);
 			  temp2 = reg_READ(trace,input_var.TOP.Mode_D,input_var.TOP.Destination);
-			  result = temp1 | temp2; 
+			  result = temp1 | temp2;
+                           
 			  /* only for instruction that reuse destination */
 			  if(Mode_D != 0){write_mem(trace,DATA_WRITE,current_EA,result);}
 			  else{reg_WRITE(trace,input_var.TOP.Mode_D, input_var.TOP.Destination, result);}
@@ -723,6 +730,7 @@ void func_doubleoperand(FILE *trace, instruction_set input_var){
 				temp1 = reg_READ(trace,input_var.TOP.Mode_S,input_var.TOP.Source);
 				temp2 = reg_READ(trace,input_var.TOP.Mode_D,input_var.TOP.Destination);
 				result = temp1 + temp2;
+                                
 				/* only for instruction that reuse destination */				 
 			 	 if(Mode_D != 0){write_mem(trace,DATA_WRITE,current_EA,result);}
 			 	 else{reg_WRITE(trace,input_var.TOP.Mode_D, input_var.TOP.Destination, result);}
@@ -733,10 +741,15 @@ void func_doubleoperand(FILE *trace, instruction_set input_var){
 			        if(result < 0){
 				      psw.N = 1; 
 			        }else{psw.N = 0;}
-			 	 psw.C = ((result & 0200000) >> 16); 
-			 	 /* Check for overflow bit - if the negate of source MSB XOR destination MSB is true, also destination MSB XOR result MSB is true, then overflow must be true */ 
-		          	psw.V = !(((temp1 & 0100000)>> 15) ^ (( temp2 & 0100000 >> 15))) && (((temp2 & 0100000) >> 15) && (result & 0100000) >> 15);
-				break; 	
+			 	 psw.C = (result > 0) ? ((result & 0200000) >> 16): 0; 
+		
+
+				 unsigned short msb_source =  (temp1 & 0100000) >> 15; 
+				 unsigned short msb_destination = (temp2 & 0100000) >> 15; 
+				 unsigned short msb_result = (result & 0100000) >> 15;  
+				/* Check for overflow bit - if the negate of source MSB XOR destination MSB is true, also destination MSB XOR result MSB is true, then overflow must be true */ 
+		          	psw.V = !(msb_source ^ msb_destination) && (msb_source & msb_result); 
+		         	break; 
 				}
 			else{	
 			 	/* SUB */
@@ -746,7 +759,8 @@ void func_doubleoperand(FILE *trace, instruction_set input_var){
 				temp1 = reg_READ(trace,input_var.TOP.Mode_S,input_var.TOP.Source);
 				temp2 = reg_READ(trace,input_var.TOP.Mode_D,input_var.TOP.Destination);
 				result = temp2 - temp1; 
-				
+						
+				printf("Source - %o, Destination - %o, result - %o, result_temp - %d\n",temp1,temp2,result,result); 
 				 
 			  	/* only for instruction that reuse destination */
 			  	if(Mode_D != 0){write_mem(trace,DATA_WRITE,current_EA,result);}
@@ -760,12 +774,15 @@ void func_doubleoperand(FILE *trace, instruction_set input_var){
 				      psw.N = 1; 
 			  	}else{psw.N = 0;}
 
-			 	 psw.V = 0; 
+			 	 psw.V = 0;
 				
-			  	 psw.C = !((result & 0200000) >> 16); 
-			  	/* Check for overflow bit - if source MSB XOR destination MSB is true, also negate of destination MSB XOR result MSB is true, then overflow must be true */ 
-		         	 psw.V = (((temp1 & 0100000)>> 15) ^ (( temp2 & 0100000 >> 15))) && !(((temp2 & 0100000) >> 15) && (result & 0100000) >> 15); 	
-				} 
+			  	 psw.C = (result > 0) ? !((result & 0200000) >> 16) : 0; 
+ 
+				 unsigned short msb_source =  (temp1 & 0100000) >> 15; 
+				 unsigned short msb_destination = (temp2 & 0100000) >> 15; 
+				 unsigned short msb_result = (result & 0100000) >> 15;  
+				/* Check for overflow bit - if the negate of source MSB XOR destination MSB is true, also destination MSB XOR result MSB is true, then overflow must be true */ 
+		          	psw.V = (msb_source ^ msb_destination) && !(msb_source & msb_result); 				} 
 				break; 
 	}
 }
@@ -1182,7 +1199,7 @@ void func_jump(FILE *trace, instruction_set input_var){
 			printf("JUMP instruction\n"); 
 		 #endif 
 		  
-		 Reg[PC] = (input_var.fetched & 0000077); 		
+		 Reg[PC] = (input_var.fetched & 0000076); 		
 	}
 	/* RTS */
 	/* Return from Subroutine  - 00020R */ 
@@ -1191,11 +1208,13 @@ void func_jump(FILE *trace, instruction_set input_var){
 			printf("NOT HAPPENING Instruction\n");
 		#endif
 		unsigned short R = (input_var.fetched & 0000007); 
-		Reg[PC] = Reg[R]; 
+		Reg[PC] = (R == PC) ? read_mem(trace,DATA_READ,Reg[SP]) : Reg[R];
 		R = read_mem(trace,DATA_READ,Reg[SP]);
-		Reg[SP] = Reg[SP] + 2; 
+		Reg[SP] = Reg[SP] + 2;
+		#ifdef DEBUG  
 		printf("R - %o, NEW PC - %o, SP - %o\n",R,Reg[PC], Reg[SP]);
-	}
+		#endif 
+		}
 	/* JSR  */
 	/* Jump to Subroutine - 004RAA */ 
 	else if(((input_var.fetched & 0177000) >> 9) == 0004){
@@ -1314,8 +1333,7 @@ int open_file(char *arr){
 
 	
 	while(1){ 	
-		fscanf( fp,"%c%o\n",&character,&octal_value); 
-		printf("Begin - %c, Octal - %o\n ", character,octal_value);   		
+		fscanf( fp,"%c%o\n",&character,&octal_value);   		
 			
 		/* populate the memory */ 
 		/* "@" gives a warning - should '@'. In C single quoutes delimits a single character whereas double qoutes are for strings */ 

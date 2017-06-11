@@ -1,0 +1,24 @@
+;JSR and RTS nested
+;To test JSR and RTS
+START: MOV #5, R1
+       JSR R2, SUBR
+SUBR:  DEC R1
+       CMP #1,R1
+       BEQ END
+       RTS R2
+END:   MOV #4, R3	  
+       HALT		
+
+;	MOV #1, R0
+;	MOV #2, R1
+;	JSR R2, SUB1
+;	MOV #3, R3
+;	CLR R0
+;	CLR R1
+;	HALT
+;
+;SUB1: 	ADD R0,R1
+;	ADD R0, R1
+;	RTS R2
+
+

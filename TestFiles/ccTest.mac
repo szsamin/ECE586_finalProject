@@ -1,5 +1,4 @@
 ; Conditional code test
-
 START: SEC ;set carry
 	   CLC ;clear carry
 	   SEV ;set overflow flag
