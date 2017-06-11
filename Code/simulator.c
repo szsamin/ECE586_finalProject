@@ -109,6 +109,14 @@ int main (int argc, char *argv[]){
 		printf("Error opening trace file!\n"); 
 	        exit(1); 
 	  } 
+
+	  /* Trace file generation for branches */ 
+	  FILE *branch = fopen("branchtrace.txt","w");
+	  if(branch == NULL){
+		printf("Branch File Creation Fialed - Error Opening File\n"); 
+		exit(1); 
+	  }
+	  fclose(branch);
 	   
 
 	  done = 0; // Ignores the Fetch > Decode > Execute for now 
@@ -169,8 +177,7 @@ int main (int argc, char *argv[]){
 					break; 
 				
 				/* Matches with - One operand and JSR and SWAB and RTS and PSW and Branch and other instructions */ 
-				case 00:
-					printf("CASE FOR RTS - CHECK\n");
+				case 00:	
 					/* We will look at the 11th bit to determine between (JSR, One Op) or the rest */ 
 					if((fetched_instruction.fetched & 0x0800) >> 11){
 						
@@ -436,8 +443,7 @@ unsigned short Effective_Address(FILE *trace, unsigned short mode, unsigned shor
 				      x = Reg[PC];
 				      Reg[PC] = x + 2;
 					
-				      #ifdef DEBUG
-				      printf("This shit works\n"); 
+				      #ifdef DEBUG 
 				      printf("New effective address - %o\n",x);
 				      #endif 
 				      result = x;
@@ -1194,12 +1200,19 @@ void func_conditionalbranch(FILE *trace,instruction_set input_var){
 void func_jump(FILE *trace, instruction_set input_var){
 	/* JUMP */
 	/* JUMP TO ADDRESS - 0001AA */ 
+	FILE * branch = fopen("branchtrace.txt","a"); 
+	if(branch == NULL){
+		exit(12); 
+	}
+
+	
 	if(((input_var.fetched & 0177700) >> 6) == 00001){
 		 #ifdef DEBUG
 			printf("JUMP instruction\n"); 
 		 #endif 
-		  
-		 Reg[PC] = (input_var.fetched & 0000076); 		
+		 unsigned short temp = (input_var.fetched & 0000077);
+                  
+		 Reg[PC] = Effective_Address(trace, (temp & 070) >> 3, (temp & 007)); 		
 	}
 	/* RTS */
 	/* Return from Subroutine  - 00020R */ 

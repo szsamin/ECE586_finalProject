@@ -1,0 +1,9 @@
+; MOV bit compare corner
+START: MOV #1, R1
+	   MOV #1, R2
+	   BIT R1,R2 ;set Z
+	   BEQ J1		 ;set Z to 1, so jump to J1
+	   MOV #4, R4
+J1:    SCC ; set all flags for check
+	   CCC ; all flags reset
+	   HAL

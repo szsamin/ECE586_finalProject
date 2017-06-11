@@ -1,19 +1,37 @@
 ; Register Addressing Modes Test 
 
-START:	MOV 	#10,@#4		; Filling up the Memory
-	MOV	#4,@#100	; 
-	MOV	#100, @#104
-	MOV 	#102, @#106
-	MOV	@#100, R1 	; Test if absolute addressing is contained in a location
-	MOV	R1,R2		; Test Register Mode
-	MOV	#102,R1
-	MOV	(R1), R2	; Test Register deferred
-	MOV 	#100, R1
-	MOV	(R1)+,R2	; 
-	MOV	(R1)+, R2	; R2 Should get 6, and PC should be increment by 2 
-	MOV 	@(R1)+,R2	; Test Autoincrement deferreed - R2 should contain 100 
-	MOV	-(R1), R2	; Takes 6 @ 102 - Autodecrement
-	MOV	@-(R1), R2	; Takes 10 @ 4 - Auto Decrement Deffered
-	MOV	4(R1), R2	; Should be 100 @ (100+4) read - Index
-	MOV	@4(R1),R2	; (100+4) -> 100 -> reads 4 - Index Deferred
+
+
+
+START:	MOV #1, @#600		; Pushing 1 into mem[100] 
+	MOV #2, @#602		; Pushing 2 into mem[102]
+	MOV #3, @#604		; Pushing 3 into mem[104]
+	MOV #4, @#606		; Pushing 4 into mem[106]
+	MOV #600, @#700		; Pushing 100 into mem[200] 
+	MOV #602, @#702		; Pushing 102 into mem[202]
+	MOV #604, @#704		; Pushing 104 into mem[204] 
+	MOV #606, @#706		; Pushing 106 into mem[206] 
+	MOV #70, R0 		; R0 -> 70
+	MOV R0, R1		; R1 -> 70 
+	MOV #25, (R1)		; Move 25 into the mem[Reg[R1]]: MEM[70] -> 25 
+	ADD (R0), (R1)		; Register Deferred for both destination and source - contents of location mem[Reg[R1]] + me[Reg[R2]]: MEM[70] -> 50 
+	MOV (R1), R0		; Register Deferred: R0 -> 50 
+	MOV (R1), (R0)+		; Auto Increment: MEM[50] -> 50
+	MOV #51,(R0)+		; Auto Increment: MEM[52] -> 51
+	MOV #52, (R0)+		; Auto Increment: MEM[54] -> 52
+	MOV -(R0), (R0)+	; Auto Decrement: MEM[52] -> 52
+	MOV @#52, R1		; Auto Decrement: R1 -> 52 
+	MOV #700, R0		; R0 -> 200
+	MOV @(R0)+, R1		; R1 -> 1	-- Auto Increment Deferred
+	MOV @(R0)+, R2		; R2 -> 2	-- Auto Increment Deferred
+	MOV @(R0)+, R3		; R3 -> 3 	-- Auto Increment Deferred
+	MOV @(R0)+, R4		; R4 -> 4 	-- Auto Increment Deferred
+	MOV @-(R0), R1		; R1 -> 4	-- Auto Decrement Deferred
+	MOV @-(R0), R2		; R2 -> 3	-- Auto Decrement Deferred
+	MOV @-(R0), R3		; R3 -> 2	-- Auto Decrement Deferredi
+	CLR R4			; Clear R4	
+	MOV #40, 4(R0)		; MEM[706] -> 40 - Index
+	MOV (R0),R4		; R4 -> 40	
+	MOV #700, R5		
+	MOV @4(R5), R1		; Index Deferred: R1 -> 3
 	HALT

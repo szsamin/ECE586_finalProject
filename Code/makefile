@@ -28,5 +28,11 @@ compile:
 run:
 	./a.out
 
-trace:
-	cat tracefile.txt 
+trace:	
+	@ cat tracefile.txt
+
+branch:
+	cat branchtrace.txt
+
+clean: 
+	rm ${PROJ}/TestFiles/source.obj ${PROJ}/TestFiles/source.lst ${PROJ}/TestFiles/source.ascii 

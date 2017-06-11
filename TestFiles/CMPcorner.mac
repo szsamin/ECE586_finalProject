@@ -1,0 +1,14 @@
+; MOV compare corner
+
+START: MOV #1, R1
+	   MOV #-1, R2
+	   ADD R1, R2 ; set Z flag
+	   MOV #-2, R2
+	   ADD R1, R2; Z=0, N=1,
+	   BMI J1
+	   MOV #4, R4	;wont work if BMI taken
+J1:    MOV #177777, R1
+	   MOV #-1, R2
+	   ADD R1,R2 ; V set?
+	   HALT
+	   
