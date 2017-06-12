@@ -34,4 +34,4 @@ branch:
 	@ cat branchtrace.txt
 
 clean: 
-	@ rm ${PROJ}/TestFiles/source.obj ${PROJ}/TestFiles/source.lst ${PROJ}/TestFiles/source.ascii 
+	@ rm ${PROJ}/TestFiles/source.obj ${PROJ}/TestFiles/source.ascii 

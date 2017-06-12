@@ -366,10 +366,7 @@ void display(){
 	/* Print everything in the memory */ /* The correct format specifier to print address is %p followed by type (void *) */ 
 	for(int i = 0; i < sizeof(mem); i++){
 	    fprintf(f,"-----------------------------------------\n"); 
-	    fprintf(f,"|   Content - %o  |     Address - %d	| \n",(unsigned char)mem[i],i);
-	    fprintf(f,"|   Content - %o  |     Address - %d	| \n",(unsigned char)mem[i],i);
-	    fprintf(f,"|   Content - %o  |     Address - %d	| \n",(unsigned char)mem[i],i);
-	    fprintf(f,"|   Content - %o  |     Address - %d	| \n",(unsigned char)mem[i],i);
+	    fprintf(f,"|   Content - %o  |     Address - %o	| \n",(unsigned char)mem[i],i);
 	    fprintf(f,"-----------------------------------------\n"); 
 	}
 	
@@ -388,8 +385,10 @@ unsigned short read_mem(FILE *trace,unsigned short type, unsigned short address)
 
 		/* Check for odd memory address request - Address allignment check */
 		if((address & 0x0001)){
-			printf("Unalligned memory address - Read memory request error! Address = %o",address); 
-			exit(1); 
+			printf("Unalligned memory address - Read memory request error! Address = %o\n",address); 
+			#ifdef A
+			exit(1);
+			#endif 
 		}
 
 		/* Read mem */ 
@@ -420,8 +419,10 @@ unsigned short read_mem(FILE *trace,unsigned short type, unsigned short address)
 /* Write to Memory function */ 
 void write_mem(FILE *trace,unsigned short type, unsigned short address, unsigned short data){
 		if((address & 0x0001)){
-			printf("Unalligned memory address - Write memory request error! Address = %o", address);
-			exit(1); 
+			printf("Unalligned memory address - Write memory request error! Address = %o\n", address);
+			#ifdef A 
+			exit(1);
+			#endif
 		}		
 		mem[address] = data & 0000377; 
 		mem[address+1] = (data & 0177400) >> 8; 
