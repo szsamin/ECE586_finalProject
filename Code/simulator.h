@@ -15,9 +15,9 @@
 #define MB (KB*KB) 
 #define MEM (64*KB) 
 
-#define DATA_READ 0 
-#define DATA_WRITE 1 
-#define INSTRUCTION_FETCH 2 
+#define DATA_READ 		0 
+#define DATA_WRITE 		1 
+#define INSTRUCTION_FETCH 	2 
 
 /* Registers */ 
 #define R0 0
@@ -35,12 +35,12 @@
 #define NOP  0000240
 
 /// -------------DOUBLE OPERAND-------------------- 
-#define MOV 01		// Move: dest = src	
-#define CMP 02		// Compare : compute src - dest, set flags only	
-#define BIT 03 		// Bit test: compute dest & src, set flags only
-#define BIC 04		//Bit clear: dest &= ~src 
-#define BIS 05		// Bit set, a.k.a logic OR: dest |= src 
-#define ADDSUB 06		// ADD, dest += src 
+#define MOV 	01		// Move: dest = src	
+#define CMP 	02		// Compare : compute src - dest, set flags only	
+#define BIT 	03 		// Bit test: compute dest & src, set flags only
+#define BIC 	04		//Bit clear: dest &= ~src 
+#define BIS 	05		// Bit set, a.k.a logic OR: dest |= src 
+#define ADDSUB  06		// ADD, dest += src 
  	// Substract, dest -=  src 
 ///-------------------------------------------------
 
@@ -74,13 +74,13 @@
 
 // Effective address calculation define //
 #define REG		00
-#define R_DEF   01
-#define AUTOINCR     02
-#define AUTOINC_DEF  03
-#define AUTODECR     04
-#define AUTODECR_DEF 05
-#define INDEX	     06
-#define INDEX_DEF    07
+#define R_DEF   	01
+#define AUTOINCR     	02
+#define AUTOINC_DEF  	03
+#define AUTODECR     	04
+#define AUTODECR_DEF 	05
+#define INDEX	    	06
+#define INDEX_DEF    	07
 
 #define IMD	02
 #define ABSDR	03
@@ -89,7 +89,7 @@
 
 
 // Branch Define
-#define BR		01
+#define BR	01
 #define BNE     02
 #define BEQ     03
 #define BPL     00
@@ -203,11 +203,11 @@ unsigned short Effective_address(FILE* trace, unsigned short mode, unsigned shor
 /* Operand Function Prototypes */ 
 void func_doubleoperand(FILE* trace,instruction_set input_var); 
 void func_singleoperand(FILE* trace,instruction_set input_var);
-void func_onehalfoperand(FILE* trace,instruction_set input_var);  
+void func_onehalfoperand(FILE* trace,instruction_set input_var);  // NOT BEING USED 
 void func_conditionalbranch(FILE* trace,instruction_set input_var); 
 void func_jump(FILE* trace,instruction_set input_var); 
 void func_psw(FILE* trace,instruction_set input_var); 
-void func_otherinstruction(FILE* trace,instruction_set input_var);
+
 
 /* Register Read and Write Functions */ 
 signed short reg_READ(FILE* trace, unsigned short mode, unsigned short source);

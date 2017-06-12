@@ -1,9 +1,15 @@
 /* PDP - 11  SIMULATOR  
-   
+   Author: Apurva Gandole, Chandan Muralidhar, Shadman Samin, Sourabh Balakrishna 
+
+   Description: Includes PDP 11 Simulator code.
+		 - Single Operands
+		 - Double Operands
+		 - Branch Instructions 
+		 - Addressing Modes Implemented
+		 - Read ASCII File
+		 - Write to memory tracefile 
+		 - Write to Branch tracefile 
 */ 
-
-
-
 
 // Library Declarations 
 #include "../Code/simulator.h" 
@@ -103,7 +109,11 @@ int main (int argc, char *argv[]){
 	   	Reg[PC] = input; 
 	  }
 	  
+
+	  /* Initialize the stack pointer to the top of the memory */ 
 	  Reg[SP] = 0177776; 
+
+
 	/* Add a command line if else - if the user does not specify a starting address, the starting address defaults to 0 */ 
 	  
 	  instruction_set  fetched_instruction; 
@@ -142,20 +152,8 @@ int main (int argc, char *argv[]){
 			printf("INSTRUCTION COUNTER = %li\n",instruction_counter);  	
 			printf("Instruction Fetched\n");
 		#endif
+
 		// Decode Instruction  		
-               /* Pseudo code */
-		/* 
-		
-		IF fetched_instruction.ZOP is either HALT | WAIT | RESET |NOP
-		ELSE IF fetched_instruction.OOP is between 0050 and 0067
-		
-		ELSE IF fetched_instruction.OHOP is between 070 and 074
-
-		ELSE IF fetched_instruction.TOP is --- 
-
-		ELSE IF 
-
-		*/
 		if(fetched_instruction.fetched == HALT){
 			done = 1; 
 			printf("Done is set to 1\n"); 
@@ -658,7 +656,7 @@ void func_doubleoperand(FILE *trace, instruction_set input_var){
 			  }else{psw.Z = 0;} 		
 	   	
 			  if(result < 0){
-				psw.N = 1;  		  /* not sure yet about sign overflow */ 
+				psw.N = 1;  		  
 			  }else{psw.N = 0;}
  
 			  psw.C = (result > 0) ? !((result & 0200000) >> 16): 0; 

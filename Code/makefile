@@ -27,6 +27,9 @@ compile:
 run:
 	@ ./a.out
 
+show: 
+	@ pr -m -t tracefile.txt branchtrace.txt
+
 trace:	
 	@ cat tracefile.txt
 
@@ -34,4 +37,4 @@ branch:
 	@ cat branchtrace.txt
 
 clean: 
-	@ rm ${PROJ}/TestFiles/source.obj ${PROJ}/TestFiles/source.ascii 
+	@ rm ${PROJ}/TestFiles/source.obj ${PROJ}/TestFiles/source.ascii ${PROJ}/Code/branchtrace.txt ${PROJ}/Code/tracefile.txt 
