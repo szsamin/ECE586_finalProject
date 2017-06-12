@@ -1057,6 +1057,7 @@ void func_conditionalbranch(FILE *trace,instruction_set input_var){
 	}
 	
 	#ifdef DEBUG
+	printf("Branch Opcode - %o\n",input_var.BRANCH.Opcode); 
 	printf("Offset = %d\n",input_var.BRANCH.Offset);
 	#endif 
 	result = temp + 2*input_var.BRANCH.Offset; 	
@@ -1167,7 +1168,7 @@ void func_conditionalbranch(FILE *trace,instruction_set input_var){
 				   if((psw.C | psw.Z) == 1){
 					Reg[PC] = result; taken = 1;}
 		 			/* Extra Credit - Branch Trace File */
-		 			name = "Jump"; 
+		 			name = "BLOS"; 
 		 			fprintf(branch,"%o %s %o %o\n",temp,name,Reg[PC],taken); 
 				   break; 
 						
@@ -1208,12 +1209,18 @@ void func_conditionalbranch(FILE *trace,instruction_set input_var){
 		 			name = "BEQ"; 
 		 			fprintf(branch,"%o %s %o %o\n",temp,name,Reg[PC],taken); 
 				    break; 
-			/*			
-			case BEG:   if( N ^ V == 0){
-							Reg[PC] = result; 
+						
+			case BGE: 
+				    #ifdef DEBUG
+					printf("BGE Branch\n");
+				    #endif
+				    name = "BGE"; 
+				    if( (psw.N ^ psw.V) == 0){
+						Reg[PC] = result; taken = 1;  
 						}
-						break; 
-			*/			
+				    fprintf(branch,"%o %s %o %o\n",temp,name,Reg[PC],taken); 
+				    break; 
+						
 			case BLT:   
 
 				    #ifdef DEBUG 
@@ -1425,7 +1432,7 @@ int open_file(char *arr){
 
 	
 	while(1){ 	
-		fscanf( fp,"%c%o\n",&character,&octal_value);   		 	
+		fscanf( fp,"%c%o\n",&character,&octal_value); 		 	
 		/* populate the memory */ 
 		/* "@" gives a warning - should '@'. In C single quoutes delimits a single character whereas double qoutes are for strings */ 
 		if(character == '@'){
@@ -1439,11 +1446,11 @@ int open_file(char *arr){
 		else{ 
 	   		mem[mem_pointer] = octal_value & 0000377;
 			#ifdef DEBUG
-			printf("Mem Value - %o, Mem Index - %d\n",mem[mem_pointer], mem_pointer);
+			printf("Mem Value - %o, Mem Index - %o\n",mem[mem_pointer], mem_pointer);
 			#endif
 			mem[mem_pointer+1] = (octal_value & 0177400) >> 8; 
 			#ifdef DEBUG
-			printf("Mem Value - %o, Mem Index - %d\n",mem[mem_pointer+1], mem_pointer+1); 
+			printf("Mem Value - %o, Mem Index - %o\n",mem[mem_pointer+1], mem_pointer+1); 
 			printf("Final Value - %o\n", (mem[mem_pointer+1] << 8) | (mem[mem_pointer])); 
 			#endif 
 			mem_pointer = mem_pointer + 2; 
