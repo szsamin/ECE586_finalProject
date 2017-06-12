@@ -1,6 +1,6 @@
 ; /* Program Counter Addressing Modes */
-RELATIVE: .WORD 6.
 
+RELATIVE: .WORD 6.
 
 START:	MOV #5, R1      ; R1 ->5                   IMMEDIATE MODE
 	BR IMMD

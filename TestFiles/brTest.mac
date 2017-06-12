@@ -4,45 +4,65 @@ START:  MOV #1, R0
  	BR L1		; Branch unconditionally
 L2:	SEZ		; Z is set to 1
 	BEQ L3		; Branch if Equal: If Z is set to BEQ is true move to L3
-L4:	ClV		; Clear V
-	BLT L5		; Branch if less than: If N and V are different branch to L5
-L6:
+L4:	CLN
+	CLC
+	ClV		; Clear V
 	SEN
+	BLT L5		; Branch if less than: If N and V are different branch to L5
+L6:	SEN
 	CLV
 	CLZ
 	BLE L7		; Branch if less than or equal to: 
 L8:	MOV #-3,R0	
 	BMI L9		; Branch if Minus: If negative is set we branch to L9
-L10:
-	SEC
+L10:	SEC
 	CLZ
 	BLOS L11	;Branch on lower than or same as: If zero or carry is 1 we branch 
 L12:	SEV
 	BVS L13		;Branch on overflow set: if overflow is set we branch 
-L14:	BCC L15		
-L16:	BLO END
+L14:	BCC L15
+		
+L16:	CLZ
+	CLV
+	CLC
+	SEC
+	BLO END
+
 L1: 	CLZ 		; Clear Zero
 	BNE L2		; If zero do BNE 
+
 L3:	SEN		; Set Negative 
 	SEV		; Set Overflow
 	BGE L4		; If they are both the same branch to L4
-L5:
+
+L5:	MOV #5, R0
+	MOV #5, R1
+	ADD R0, R1 
 	CLN		; Set Negative to 1
 	CLV 		; Set Overflow to 1
 	CLZ		; Clear Zero to 0
 	BGT L6		; Branch if greater than 0:
-L7:
-	MOV #5, R0
+
+L7:	MOV #5, R0
 	BPL L8		; Branch on Plus: If positive branch to L8 
+
 L9:	CLZ
 	CLC		
 	BHI L10		;Branch on higher than: if both Carry and Zero is 0 we branch
+
 L11: 	CLV	
-	BVC L12		; Branch on overflow clear: if overflow is cleared we branch 
+	BVC L12		; Branch on overflow clear: if overflow is cleared we branch
+ 
 L13: 	CCC
 	BCC L14		; Branch if carry clear: 
+
 L15:	MOV #65535.,R0
 	MOV #1,R1
-	ADD R0,R1	
+	ADD R0,R1
+	CLZ 
+	CLC
+	CLN
+	SEC	
 	BCS L16		; Branch if carry is set: 
+
 END:	HALT 

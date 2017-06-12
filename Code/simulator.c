@@ -582,6 +582,9 @@ signed short reg_READ(FILE *trace, unsigned short mode, unsigned short source) {
 		default 			: temp = Effective_Address(trace, mode, source);
 						  current_EA = temp; 			  
 						  temp =  read_mem(trace,DATA_READ,temp); 
+						  #ifdef DEBUG
+						  printf("Effective Address reads from Memory Location: %o, Data - %o\n",current_EA,temp); 
+						  #endif
 					 	  break;									  
 	}
 	#ifdef DEBUG 
@@ -1060,7 +1063,12 @@ void func_conditionalbranch(FILE *trace,instruction_set input_var){
 	printf("Branch Opcode - %o\n",input_var.BRANCH.Opcode); 
 	printf("Offset = %d\n",input_var.BRANCH.Offset);
 	#endif 
-	result = temp + 2*input_var.BRANCH.Offset; 	
+	result = temp + 2*input_var.BRANCH.Offset; 
+	
+	#ifdef DEBUG
+	printf("New PC Location for Branch - %o\n",result); 
+	#endif
+	
 	temp = current_pc; 
 
 	if(input_var.BRANCH.x){
@@ -1075,7 +1083,7 @@ void func_conditionalbranch(FILE *trace,instruction_set input_var){
 					}
 		 			/* Extra Credit - Branch Trace File */
 		 			name = "BPL"; 
-					fprintf(branch,"%o %s %o %o\n",temp,name,Reg[PC],taken); 
+					fprintf(branch,"%o %s %o %o\n",temp,name,result,taken); 
 				    break;
 						
 			case BMI : 
@@ -1087,7 +1095,7 @@ void func_conditionalbranch(FILE *trace,instruction_set input_var){
 					Reg[PC] = result; taken = 1;}  
 		 			/* Extra Credit - Branch Trace File */
 		 			name  = "BMI"; 
-		 			fprintf(branch,"%o %s %o %o\n",temp,name,Reg[PC],taken); 
+		 			fprintf(branch,"%o %s %o %o\n",temp,name,result,taken); 
 				    break;
 						
 			case BVC : 
@@ -1099,7 +1107,7 @@ void func_conditionalbranch(FILE *trace,instruction_set input_var){
 					Reg[PC] = result; taken = 1;}
 		 			/* Extra Credit - Branch Trace File */
 		 			name = "BVC"; 
-					fprintf(branch,"%o %s %o %o\n",temp,name,Reg[PC],taken); 
+					fprintf(branch,"%o %s %o %o\n",temp,name,result,taken); 
 				   break; 
 						
 			case BVS : 
@@ -1111,7 +1119,7 @@ void func_conditionalbranch(FILE *trace,instruction_set input_var){
 					Reg[PC] = result; taken = 1;} 
 					/* Extra Credit - Branch Trace File */
 		 			name = "BVS"; 
-		 			fprintf(branch,"%o %s %o %o\n",temp,name,Reg[PC],taken); 
+		 			fprintf(branch,"%o %s %o %o\n",temp,name,result,taken); 
 				   break;
 			/*				
 			case BHIS: if(C == 0){
@@ -1128,7 +1136,7 @@ void func_conditionalbranch(FILE *trace,instruction_set input_var){
 				        Reg[PC] = result; taken = 1;}
 		 			/* Extra Credit - Branch Trace File */
 		 			name = "BCC"; 
-		 			fprintf(branch,"%o %s %o %o\n",temp,name,Reg[PC],taken); 
+		 			fprintf(branch,"%o %s %o %o\n",temp,name,result,taken); 
 				   break;
 			/*			
 			case BLO : if(C == 1){
@@ -1145,7 +1153,7 @@ void func_conditionalbranch(FILE *trace,instruction_set input_var){
 					Reg[PC] = result; taken = 1;}
 		 			/* Extra Credit - Branch Trace File */
 		 			name= "BCS"; 
-		 			fprintf(branch,"%o %s %o %o\n",temp,name,Reg[PC],taken); 
+		 			fprintf(branch,"%o %s %o %o\n",temp,name,result,taken); 
 				   break; 
 						
 			case BHI : 
@@ -1153,11 +1161,11 @@ void func_conditionalbranch(FILE *trace,instruction_set input_var){
 					printf("BHI Branch\n"); 
 				    #endif
 		
-				   if((psw.C | psw.Z) == 0){
+				   if((psw.C & psw.Z) == 0){
 					Reg[PC] = result; taken = 1;}
 					/* Extra Credit - Branch Trace File */
 		 			name= "BHI"; 
-		 			fprintf(branch,"%o %s %o %o\n",temp,name,Reg[PC],taken); 
+		 			fprintf(branch,"%o %s %o %o\n",temp,name,result,taken); 
 				   break;
 						
 			case BLOS: 
@@ -1169,7 +1177,7 @@ void func_conditionalbranch(FILE *trace,instruction_set input_var){
 					Reg[PC] = result; taken = 1;}
 		 			/* Extra Credit - Branch Trace File */
 		 			name = "BLOS"; 
-		 			fprintf(branch,"%o %s %o %o\n",temp,name,Reg[PC],taken); 
+		 			fprintf(branch,"%o %s %o %o\n",temp,name,result,taken); 
 				   break; 
 						
 		}
@@ -1182,7 +1190,7 @@ void func_conditionalbranch(FILE *trace,instruction_set input_var){
 				    #endif 
 				    /* Extra Credit - Branch Trace File */
 				    name = "BR"; 
-				    fprintf(branch,"%o %s %o %o\n",temp,name,Reg[PC],1); 
+				    fprintf(branch,"%o %s %o %o\n",temp,name,result,1); 
 				    
 	               		    break;  
 						
@@ -1195,7 +1203,7 @@ void func_conditionalbranch(FILE *trace,instruction_set input_var){
 					Reg[PC] = result; taken = 1;}
 		 			/* Extra Credit - Branch Trace File */
 		 			name= "BNE"; 
-					fprintf(branch,"%o %s %o %o\n",temp,name,Reg[PC],taken); 
+					fprintf(branch,"%o %s %o %o\n",temp,name,result,taken); 
 				    break;
 						
 			case BEQ:   
@@ -1207,7 +1215,7 @@ void func_conditionalbranch(FILE *trace,instruction_set input_var){
 					Reg[PC] = result; taken = 1;}
 		 			/* Extra Credit - Branch Trace File */
 		 			name = "BEQ"; 
-		 			fprintf(branch,"%o %s %o %o\n",temp,name,Reg[PC],taken); 
+		 			fprintf(branch,"%o %s %o %o\n",temp,name,result,taken); 
 				    break; 
 						
 			case BGE: 
@@ -1215,10 +1223,10 @@ void func_conditionalbranch(FILE *trace,instruction_set input_var){
 					printf("BGE Branch\n");
 				    #endif
 				    name = "BGE"; 
-				    if( (psw.N ^ psw.V) == 0){
+				    if(!(psw.N ^ psw.V)){
 						Reg[PC] = result; taken = 1;  
 						}
-				    fprintf(branch,"%o %s %o %o\n",temp,name,Reg[PC],taken); 
+				    fprintf(branch,"%o %s %o %o\n",temp,name,result,taken); 
 				    break; 
 						
 			case BLT:   
@@ -1226,12 +1234,14 @@ void func_conditionalbranch(FILE *trace,instruction_set input_var){
 				    #ifdef DEBUG 
 					printf("BLT Branch\n"); 
 				    #endif
-
-				    if( ((psw.N) ^ (psw.Z)) == 1){
-					Reg[PC] = result; taken = 1;}
+				    
+				    if( ((psw.N) ^ (psw.V)) == 1){
+					Reg[PC] = result; taken = 1;
+					printf("SET PC - %o, Result Taken - %o\n",Reg[PC],result); 
+					}
 		 			/* Extra Credit - Branch Trace File */
 		 			name = "BLT"; 
-		 			fprintf(branch,"%o %s %o %o\n",temp,name,Reg[PC],taken); 
+		 			fprintf(branch,"%o %s %o %o\n",temp,name,result,taken); 
 				    break; 
 						
 			case BGT:   
@@ -1240,10 +1250,11 @@ void func_conditionalbranch(FILE *trace,instruction_set input_var){
 				    #endif
 			
 				    if( (psw.Z | (psw.N ^ psw.V)) == 0){
-					Reg[PC] = result; taken = 1;}
+					Reg[PC] = result; taken = 1;
+				        }
 		 			/* Extra Credit - Branch Trace File */
 		 			name = "BGT"; 
-					fprintf(branch,"%o %s %o %o\n",temp,name,Reg[PC],taken); 
+					fprintf(branch,"%o %s %o %o\n",temp,name,result,taken); 
 				    break;
 						
 			case BLE:   
@@ -1255,7 +1266,7 @@ void func_conditionalbranch(FILE *trace,instruction_set input_var){
 					Reg[PC] = result; taken = 1;}
 		 			/* Extra Credit - Branch Trace File */
 		 			name = "BLE"; 
-					fprintf(branch,"%o %s %o %o\n",temp,name,Reg[PC],taken); 
+					fprintf(branch,"%o %s %o %o\n",temp,name,result,taken); 
 		   		    break;
 		}
 	}
