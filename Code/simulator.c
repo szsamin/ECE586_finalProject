@@ -1,4 +1,6 @@
-
+/* PDP - 11  SIMULATOR  
+   
+*/ 
 
 
 
@@ -11,7 +13,9 @@
 char dataStr[MEM];  				
 unsigned char mem[MEM]; 		// Memory size declaration 
 unsigned short Reg [8]; 		// Register size declaration 
+unsigned short star_addr = 0; 		// Check for '*' is present or not 
 
+unsigned short current_pc; 
 unsigned short current_EA;		// Current global EA available to all functions for manipulation  
 
 /* GUI STUFF - STILL IN WORKS */ 
@@ -90,12 +94,14 @@ int main (int argc, char *argv[]){
 	  
 	  int done = 0;
 	  int input; 
-
+		
 	  /* Initial Starting address */
-	  printf("Input starting program counter value\n");
-	  scanf("%d",&input); 
-	   
-          Reg[PC] = input; 
+	  /* If '*' is present we set PC  otherwise it prompts the user it ask for the input PC */  
+	  if(star_addr == 0){ 
+	  	printf("Input starting program counter value\n");
+	 	scanf("%d",&input); 
+	   	Reg[PC] = input; 
+	  }
 	  
 	  Reg[SP] = 0177776; 
 	/* Add a command line if else - if the user does not specify a starting address, the starting address defaults to 0 */ 
@@ -126,6 +132,7 @@ int main (int argc, char *argv[]){
 		#ifdef STEP	
 			getchar();
 		#endif	
+		current_pc = Reg[PC]; 
  
 	   	// Fetch Instruction  
 	  	fetched_instruction = (union instruction_set)read_mem(trace,INSTRUCTION_FETCH,Reg[PC]); 
@@ -308,7 +315,7 @@ int main (int argc, char *argv[]){
 		  sprintf(str, "%li", instruction_counter);
 		  counterval = gtk_label_new(str);
 		  gtk_label_set_text(counterval,str); 
-		  printf("Shit is looping\n"); 
+		   
 		  gtk_table_attach_defaults (GTK_TABLE (table), counterval, 1, 2, 9, 10);
 	 	  gtk_widget_show_all(window);
 		  gtk_main();
@@ -441,7 +448,7 @@ unsigned short Effective_Address(FILE *trace, unsigned short mode, unsigned shor
 				      printf("Reg[PC] = %o\n",Reg[PC]);
 				      #endif
 				      x = Reg[PC];
-				      Reg[PC] = x + 2;
+				      Reg[PC] = Reg[PC] + 2;
 					
 				      #ifdef DEBUG 
 				      printf("New effective address - %o\n",x);
@@ -451,7 +458,7 @@ unsigned short Effective_Address(FILE *trace, unsigned short mode, unsigned shor
 
 			case RLDIR  : 
 				      #ifdef DEBUG	
-				      printf("Relative Direct addressing\n");
+				      printf("Relative addressing\n");
 				      printf("REG[PC] before read_mem - %o\n",Reg[PC]); 
 				      #endif
 
@@ -466,7 +473,7 @@ unsigned short Effective_Address(FILE *trace, unsigned short mode, unsigned shor
 
 			case ABSDR  : 
 				      #ifdef DEBUG 
-				      printf("Absolute Direct \n");
+				      printf("Absolute Addressing\n");
 				      #endif 
 				      x = read_mem(trace,DATA_READ,Reg[PC]);
 			 	      Reg[PC] = Reg[PC] + 2;
@@ -475,7 +482,7 @@ unsigned short Effective_Address(FILE *trace, unsigned short mode, unsigned shor
 
 			case RLINDIR: 
 				      #ifdef DEBUG
-				      printf("Relative Indirect addressing\n");
+				      printf("Relative Deffered addressing\n");
 				      #endif
 				      x = read_mem(trace,DATA_READ,Reg[PC]);
 				      Reg[PC] = Reg[PC] + 2; 
@@ -1039,22 +1046,35 @@ void func_singleoperand(FILE *trace,instruction_set input_var){
 void func_conditionalbranch(FILE *trace,instruction_set input_var){
 	unsigned short temp;
 	unsigned short result; 
+	int taken = 0;
+	char* name; 
 	temp = Reg[PC];
+	/* Trace file generation for branches */ 
+	FILE *branch = fopen("branchtrace.txt","a");
+	if(branch == NULL){
+		printf("Branch File Creation Fialed - Error Opening File\n"); 
+		exit(1); 
+	}
 	
 	#ifdef DEBUG
 	printf("Offset = %d\n",input_var.BRANCH.Offset);
 	#endif 
 	result = temp + 2*input_var.BRANCH.Offset; 	
+	temp = current_pc; 
 
 	if(input_var.BRANCH.x){
 		switch(input_var.BRANCH.Opcode){
 			case BPL : 
 				    #ifdef DEBUG 
 					printf("BPL Branch\n"); 
-				    #endif
+				    #endif	
  
 				    if(psw.N == 0){
-					Reg[PC] = result;}
+					Reg[PC] = result; taken = 1; 
+					}
+		 			/* Extra Credit - Branch Trace File */
+		 			name = "BPL"; 
+					fprintf(branch,"%o %s %o %o\n",temp,name,Reg[PC],taken); 
 				    break;
 						
 			case BMI : 
@@ -1063,8 +1083,10 @@ void func_conditionalbranch(FILE *trace,instruction_set input_var){
 				    #endif
 
 				     if(psw.N == 1){
-					Reg[PC] = result; 
-					}
+					Reg[PC] = result; taken = 1;}  
+		 			/* Extra Credit - Branch Trace File */
+		 			name  = "BMI"; 
+		 			fprintf(branch,"%o %s %o %o\n",temp,name,Reg[PC],taken); 
 				    break;
 						
 			case BVC : 
@@ -1073,7 +1095,10 @@ void func_conditionalbranch(FILE *trace,instruction_set input_var){
 				    #endif
 
 				   if(psw.V == 0){
-					Reg[PC] = result;}
+					Reg[PC] = result; taken = 1;}
+		 			/* Extra Credit - Branch Trace File */
+		 			name = "BVC"; 
+					fprintf(branch,"%o %s %o %o\n",temp,name,Reg[PC],taken); 
 				   break; 
 						
 			case BVS : 
@@ -1082,7 +1107,10 @@ void func_conditionalbranch(FILE *trace,instruction_set input_var){
 				    #endif
 		
 				   if(psw.V == 1){
-					Reg[PC] = result;} 
+					Reg[PC] = result; taken = 1;} 
+					/* Extra Credit - Branch Trace File */
+		 			name = "BVS"; 
+		 			fprintf(branch,"%o %s %o %o\n",temp,name,Reg[PC],taken); 
 				   break;
 			/*				
 			case BHIS: if(C == 0){
@@ -1096,7 +1124,10 @@ void func_conditionalbranch(FILE *trace,instruction_set input_var){
 				    #endif
 		
 				   if(psw.C == 0){
-				        Reg[PC] = result;}
+				        Reg[PC] = result; taken = 1;}
+		 			/* Extra Credit - Branch Trace File */
+		 			name = "BCC"; 
+		 			fprintf(branch,"%o %s %o %o\n",temp,name,Reg[PC],taken); 
 				   break;
 			/*			
 			case BLO : if(C == 1){
@@ -1110,7 +1141,10 @@ void func_conditionalbranch(FILE *trace,instruction_set input_var){
 				    #endif
 
 				   if(psw.C == 1){
-					Reg[PC] = result;}
+					Reg[PC] = result; taken = 1;}
+		 			/* Extra Credit - Branch Trace File */
+		 			name= "BCS"; 
+		 			fprintf(branch,"%o %s %o %o\n",temp,name,Reg[PC],taken); 
 				   break; 
 						
 			case BHI : 
@@ -1119,7 +1153,10 @@ void func_conditionalbranch(FILE *trace,instruction_set input_var){
 				    #endif
 		
 				   if((psw.C | psw.Z) == 0){
-					Reg[PC] = result;}
+					Reg[PC] = result; taken = 1;}
+					/* Extra Credit - Branch Trace File */
+		 			name= "BHI"; 
+		 			fprintf(branch,"%o %s %o %o\n",temp,name,Reg[PC],taken); 
 				   break;
 						
 			case BLOS: 
@@ -1128,7 +1165,10 @@ void func_conditionalbranch(FILE *trace,instruction_set input_var){
 				    #endif
 
 				   if((psw.C | psw.Z) == 1){
-					Reg[PC] = result;}
+					Reg[PC] = result; taken = 1;}
+		 			/* Extra Credit - Branch Trace File */
+		 			name = "Jump"; 
+		 			fprintf(branch,"%o %s %o %o\n",temp,name,Reg[PC],taken); 
 				   break; 
 						
 		}
@@ -1137,8 +1177,11 @@ void func_conditionalbranch(FILE *trace,instruction_set input_var){
 		switch(input_var.BRANCH.Opcode){
 			case BR :   Reg[PC] = result;
 				    #ifdef DEBUG 
-					printf("BR Branch\n"); 
-				    #endif
+					printf("BR Branch\n");
+				    #endif 
+				    /* Extra Credit - Branch Trace File */
+				    name = "BR"; 
+				    fprintf(branch,"%o %s %o %o\n",temp,name,Reg[PC],1); 
 				    
 	               		    break;  
 						
@@ -1148,7 +1191,10 @@ void func_conditionalbranch(FILE *trace,instruction_set input_var){
 				    #endif
 	
 				    if(psw.Z == 0){
-					Reg[PC] = result;}
+					Reg[PC] = result; taken = 1;}
+		 			/* Extra Credit - Branch Trace File */
+		 			name= "BNE"; 
+					fprintf(branch,"%o %s %o %o\n",temp,name,Reg[PC],taken); 
 				    break;
 						
 			case BEQ:   
@@ -1157,7 +1203,10 @@ void func_conditionalbranch(FILE *trace,instruction_set input_var){
 				    #endif
 
 			 	    if(psw.Z == 1){
-					Reg[PC] = result;}
+					Reg[PC] = result; taken = 1;}
+		 			/* Extra Credit - Branch Trace File */
+		 			name = "BEQ"; 
+		 			fprintf(branch,"%o %s %o %o\n",temp,name,Reg[PC],taken); 
 				    break; 
 			/*			
 			case BEG:   if( N ^ V == 0){
@@ -1172,7 +1221,10 @@ void func_conditionalbranch(FILE *trace,instruction_set input_var){
 				    #endif
 
 				    if( ((psw.N) ^ (psw.Z)) == 1){
-					Reg[PC] = result;}
+					Reg[PC] = result; taken = 1;}
+		 			/* Extra Credit - Branch Trace File */
+		 			name = "BLT"; 
+		 			fprintf(branch,"%o %s %o %o\n",temp,name,Reg[PC],taken); 
 				    break; 
 						
 			case BGT:   
@@ -1181,7 +1233,10 @@ void func_conditionalbranch(FILE *trace,instruction_set input_var){
 				    #endif
 			
 				    if( (psw.Z | (psw.N ^ psw.V)) == 0){
-					Reg[PC] = result;}
+					Reg[PC] = result; taken = 1;}
+		 			/* Extra Credit - Branch Trace File */
+		 			name = "BGT"; 
+					fprintf(branch,"%o %s %o %o\n",temp,name,Reg[PC],taken); 
 				    break;
 						
 			case BLE:   
@@ -1190,29 +1245,43 @@ void func_conditionalbranch(FILE *trace,instruction_set input_var){
 				    #endif
 
 				    if( (psw.Z | (psw.N ^ psw.V)) == 1){
-					Reg[PC] = result;}
+					Reg[PC] = result; taken = 1;}
+		 			/* Extra Credit - Branch Trace File */
+		 			name = "BLE"; 
+					fprintf(branch,"%o %s %o %o\n",temp,name,Reg[PC],taken); 
 		   		    break;
 		}
 	}
+	fclose(branch);
 }
 
 /* JUMP Instruction */ 
-void func_jump(FILE *trace, instruction_set input_var){
-	/* JUMP */
-	/* JUMP TO ADDRESS - 0001AA */ 
-	FILE * branch = fopen("branchtrace.txt","a"); 
+void func_jump(FILE *trace, instruction_set input_var){ 
+        char* name; 
+        
+	/* Trace file generation for branches */ 
+	FILE *branch = fopen("branchtrace.txt","a");
 	if(branch == NULL){
-		exit(12); 
+		printf("Branch File Creation Fialed - Error Opening File\n"); 
+		exit(1); 
 	}
-
 	
+
+	/* JUMP */
+	/* JUMP TO ADDRESS - 0001AA *} */
 	if(((input_var.fetched & 0177700) >> 6) == 00001){
 		 #ifdef DEBUG
 			printf("JUMP instruction\n"); 
 		 #endif 
 		 unsigned short temp = (input_var.fetched & 0000077);
-                  
-		 Reg[PC] = Effective_Address(trace, (temp & 070) >> 3, (temp & 007)); 		
+                   
+		 Reg[PC] = Effective_Address(trace, (temp & 070) >> 3, (temp & 007));
+	 	 
+		 
+		 /* Extra Credit - Branch Trace File */
+		 name = "Jump"; 
+		 fprintf(branch,"%o %s %o %o\n",current_pc,name,Reg[PC],1); 
+		
 	}
 	/* RTS */
 	/* Return from Subroutine  - 00020R */ 
@@ -1220,13 +1289,18 @@ void func_jump(FILE *trace, instruction_set input_var){
 		#ifdef DEBUG 
 			printf("NOT HAPPENING Instruction\n");
 		#endif
-		unsigned short R = (input_var.fetched & 0000007); 
+		unsigned short R = (input_var.fetched & 0000007);
+		  
 		Reg[PC] = (R == PC) ? read_mem(trace,DATA_READ,Reg[SP]) : Reg[R];
 		R = read_mem(trace,DATA_READ,Reg[SP]);
 		Reg[SP] = Reg[SP] + 2;
 		#ifdef DEBUG  
 		printf("R - %o, NEW PC - %o, SP - %o\n",R,Reg[PC], Reg[SP]);
-		#endif 
+		#endif
+ 
+		/* Extra Credit - Branch Trace File */
+		name = "RTS"; 
+		fprintf(branch,"%o %s %o %o\n",current_pc,name,Reg[PC],1); 
 		}
 	/* JSR  */
 	/* Jump to Subroutine - 004RAA */ 
@@ -1244,7 +1318,12 @@ void func_jump(FILE *trace, instruction_set input_var){
 		write_mem(trace,DATA_WRITE,Reg[SP],Reg[R]); 
 		Reg[R] = Reg[PC]; 
 		Reg[PC] = temp; 
+		
+		/* Extra Credit - Branch Trace File */
+		name = "JSR"; 
+		fprintf(branch,"%o %s %o %o\n",current_pc,name,Reg[PC],1); 
 	}
+	fclose(branch);
 } 
 
 /* PSW Instruction */
@@ -1346,8 +1425,7 @@ int open_file(char *arr){
 
 	
 	while(1){ 	
-		fscanf( fp,"%c%o\n",&character,&octal_value);   		
-			
+		fscanf( fp,"%c%o\n",&character,&octal_value);   		 	
 		/* populate the memory */ 
 		/* "@" gives a warning - should '@'. In C single quoutes delimits a single character whereas double qoutes are for strings */ 
 		if(character == '@'){
@@ -1356,6 +1434,7 @@ int open_file(char *arr){
 		}
 		else if(character == '*'){
 			Reg[PC] = octal_value;
+			star_addr = 1; 
 		}
 		else{ 
 	   		mem[mem_pointer] = octal_value & 0000377;

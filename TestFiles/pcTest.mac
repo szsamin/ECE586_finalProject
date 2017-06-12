@@ -1,0 +1,21 @@
+; /* Program Counter Addressing Modes */
+RELATIVE: .WORD 6.
+
+
+START:	MOV #5, R1      ; R1 ->5                   IMMEDIATE MODE
+	BR IMMD
+
+IMMD: 	CLR R1		
+	MOV #10, @#100	; Absolute Addressing mode
+	MOV @#100, R1	; R1 -> 10 
+	BR IMDR
+
+IMDR:	CLR R1		
+	MOV RELATIVE, R1 ; Relative address
+	BR RLDF
+
+RLDF:	CLR R1
+	MOV #10, @#6	; Relative Deferred 
+        MOV @RELATIVE, R1
+	HALT
+	

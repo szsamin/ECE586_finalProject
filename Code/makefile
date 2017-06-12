@@ -22,17 +22,16 @@ macro11:
 obj2ascii:
 	@ ${FAUST}/obj2ascii ${PROJ}/TestFiles/source.obj ${PROJ}/TestFiles/source.ascii
 
-compile:
-	echo $(CURDIR) 
+compile:	 
 	@ ${CC} ${CFLAGS} -Wall simulator.h simulator.c `pkg-config --libs --cflags gtk+-2.0` 	 	 	
 run:
-	./a.out
+	@ ./a.out
 
 trace:	
 	@ cat tracefile.txt
 
 branch:
-	cat branchtrace.txt
+	@ cat branchtrace.txt
 
 clean: 
-	rm ${PROJ}/TestFiles/source.obj ${PROJ}/TestFiles/source.lst ${PROJ}/TestFiles/source.ascii 
+	@ rm ${PROJ}/TestFiles/source.obj ${PROJ}/TestFiles/source.lst ${PROJ}/TestFiles/source.ascii 
